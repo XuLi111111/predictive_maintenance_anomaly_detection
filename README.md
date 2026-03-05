@@ -1,0 +1,2 @@
+# predictive_maintenance_anomaly_detection
+Capstone project
