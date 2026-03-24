@@ -232,3 +232,4 @@ processed_data/
 # IDE / local project files
 .idea/
 .vscode/
+results/
