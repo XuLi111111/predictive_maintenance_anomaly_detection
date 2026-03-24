@@ -210,8 +210,12 @@ __marimo__/
 
 # Project specific (ML datasets, generated data, and local artifacts)
 # Raw and processed datasets
-/data/raw/
-/data/processed/
+/data/raw/*
+!/data/raw/.gitkeep
+/data/processed/*
+!/data/processed/.gitkeep
+!/data/processed/dataset1/.gitkeep
+!/data/processed/dataset2/.gitkeep
 processed_data/
 
 # Generated dataset / array files
