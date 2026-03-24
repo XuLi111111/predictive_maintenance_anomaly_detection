@@ -221,7 +221,6 @@ processed_data/
 # Generated dataset / array files
 *.npy
 *.npz
-*.csv
 
 # Trained model artifacts
 *.pkl
