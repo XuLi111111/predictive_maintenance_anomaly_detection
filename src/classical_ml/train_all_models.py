@@ -124,3 +124,73 @@ print("SUPERVISED MODELS COMPARISON  (sorted by Recall)")
 print("=" * 55)
 print(df_results[["Model", "Precision", "Recall", "F1", "FPR", "FNR"]].to_string(index=False))
 print(f"\nResults saved to:\n  {csv_path}")
+
+# ══════════════════════════════════════════════════════════════════════════
+# 2. UNSUPERVISED MODELS
+# ══════════════════════════════════════════════════════════════════════════
+from sklearn.ensemble import IsolationForest
+from pyod.models.cblof import CBLOF
+from pyod.models.hbos import HBOS
+
+print("\n" + "=" * 55)
+print("UNSUPERVISED MODELS  (trained on NORMAL data only)")
+print("=" * 55)
+
+X_train_normal = np.load(DATA_DIR / "X_train_normal.npy")
+
+scaler          = StandardScaler()
+X_normal_scaled = scaler.fit_transform(X_train_normal)
+X_test_scaled   = scaler.transform(X_test)
+
+# ── Isolation Forest ──────────────────────────────────────────────────────
+print("\n  Training Isolation Forest...")
+iso = IsolationForest(
+    n_estimators=300,
+    contamination="auto",
+    random_state=RANDOM_STATE,
+    n_jobs=-1,
+)
+iso.fit(X_normal_scaled)
+y_pred_iso = (iso.predict(X_test_scaled) == -1).astype(int)
+
+# ── CBLOF ─────────────────────────────────────────────────────────────────
+print("\n  Training CBLOF...")
+cblof = CBLOF(
+    n_clusters=8,
+    contamination=0.1,
+    random_state=RANDOM_STATE,
+)
+cblof.fit(X_normal_scaled)
+y_pred_cblof = cblof.predict(X_test_scaled)
+
+# ── HBOS ──────────────────────────────────────────────────────────────────
+print("\n  Training HBOS...")
+hbos = HBOS(
+    n_bins=20,
+    contamination=0.1,
+)
+hbos.fit(X_normal_scaled)
+y_pred_hbos = hbos.predict(X_test_scaled)
+
+unsupervised_results = []
+unsupervised_results.append(compute_metrics(y_test, y_pred_iso,   "Isolation Forest", "Unsupervised"))
+unsupervised_results.append(compute_metrics(y_test, y_pred_cblof, "CBLOF",            "Unsupervised"))
+unsupervised_results.append(compute_metrics(y_test, y_pred_hbos,  "HBOS",             "Unsupervised"))
+
+df_unsupervised = pd.DataFrame(unsupervised_results)
+df_unsupervised = df_unsupervised.sort_values("Recall", ascending=False)
+
+unsup_csv = RESULTS_DIR / "unsupervised_results.csv"
+df_unsupervised.to_csv(unsup_csv, index=False)
+
+print("\n\n" + "=" * 55)
+print("UNSUPERVISED MODELS COMPARISON  (sorted by Recall)")
+print("=" * 55)
+print(df_unsupervised[["Model", "Precision", "Recall", "F1", "FPR", "FNR"]].to_string(index=False))
+print(f"\nUnsupervised results saved to:\n  {unsup_csv}")
+
+# ── Combined comparison ────────────────────────────────────────────────────
+df_all = pd.concat([df_results, df_unsupervised], ignore_index=True)
+all_csv = RESULTS_DIR / "all_models_comparison.csv"
+df_all.to_csv(all_csv, index=False)
+print(f"\nAll models combined saved to:\n  {all_csv}")
