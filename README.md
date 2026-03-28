@@ -9,8 +9,6 @@
 
 ## Files to Use
 
-Send the following to your teammates:
-
 ```
 processed/
 ├── zenodo_pump_2d/          ← USE THIS for traditional ML models
