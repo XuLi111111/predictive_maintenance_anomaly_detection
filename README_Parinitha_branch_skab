@@ -1,0 +1,222 @@
+# SKAB Dataset Evaluation — Supervised Fault Classification
+**CITS5206 Capstone Project | Group 14 | University of Western Australia**
+**Author: Parinitha Gurram | Branch: Parinitha-branch**
+
+---
+
+## Overview
+
+This branch contains an independent evaluation of the **SKAB (Skoltech Anomaly Benchmark)** dataset to determine its suitability for supervised binary fault classification in a predictive maintenance context.
+
+The evaluation was conducted to compare SKAB against the Kaggle Pump Sensor dataset and provide evidence-based reasoning for the team's final dataset decision. The work covers the full pipeline — from raw data loading through to model training, evaluation, and a written verdict.
+
+---
+
+## Dataset
+
+**SKAB v0.9** is a publicly available benchmark dataset collected from a real industrial pump testbed at Skoltech, Russia. It contains multivariate time-series sensor recordings sampled at 1 Hz (one reading per second).
+
+### Files Used
+
+| Source | Files | Total Rows | Fault Rows | Fault % |
+|---|---|---|---|---|
+| anomaly-free | 1 file | 9,401 | 0 | 0.0% |
+| valve1 | 16 files (0.csv – 15.csv) | 18,162 | 6,309 | 34.7% |
+| valve2 | 4 files (0.csv – 3.csv) | 4,312 | 1,517 | 35.2% |
+| **Total** | **21 files** | **31,875** | **7,826** | **24.6%** |
+
+- **anomaly-free** contains normal pump operation with no faults — used as the normal class baseline
+- **valve1** captures fault scenarios caused by closing the valve at the pump inlet
+- **valve2** captures fault scenarios caused by closing the valve at the pump outlet
+
+### Sensor Features (8 columns)
+
+| Sensor | Description |
+|---|---|
+| Accelerometer1RMS | Vibration acceleration — sensor 1 (g) |
+| Accelerometer2RMS | Vibration acceleration — sensor 2 (g) |
+| Current | Amperage on the electric motor (A) |
+| Pressure | Pressure in the loop after the pump (Bar) |
+| Temperature | Engine body temperature (°C) |
+| Thermocouple | Fluid temperature in the circulation loop (°C) |
+| Voltage | Voltage on the electric motor (V) |
+| Volume Flow RateRMS | Flow rate root mean square (L/min) |
+
+---
+
+## Methodology
+
+### Step 1 — Data Loading and Merging
+
+All 21 CSV files were loaded and merged into a single DataFrame. The anomaly-free file was assigned label `0` (normal) for all rows. The valve1 and valve2 files each contain an `anomaly` column with binary labels (`0` = normal, `1` = fault), which were used directly.
+
+Files were sorted chronologically by timestamp before any further processing to preserve the time-series order.
+
+### Step 2 — Class Distribution Analysis
+
+After merging:
+- **Normal rows:** 24,049 (75.4%)
+- **Fault rows:** 7,826 (24.6%)
+- **Imbalance ratio:** 3.07:1 (Normal:Fault)
+
+A 3:1 ratio represents moderate class imbalance. This means a naive model that always predicts "normal" would achieve 75% accuracy — which is misleading. For this reason, accuracy alone is not a reliable metric and F1-score on the fault class is used as the primary evaluation metric throughout this work.
+
+### Step 3 — Signal Quality and Separability Check
+
+Each sensor was analysed to determine how well it separates normal from fault conditions. The mean value per sensor was computed for both classes and the absolute difference was compared against the overall standard deviation.
+
+| Sensor | Normal Mean | Fault Mean | Difference | Separable? |
+|---|---|---|---|---|
+| Accelerometer1RMS | 0.0997 | 0.0274 | 0.0722 | YES |
+| Accelerometer2RMS | 0.1295 | 0.0405 | 0.0890 | YES |
+| Current | 1.6720 | 1.2940 | 0.3780 | NO |
+| Pressure | 0.0815 | 0.0617 | 0.0199 | NO |
+| Temperature | 77.5867 | 69.6546 | 7.9321 | YES |
+| Thermocouple | 26.2689 | 24.8532 | 1.4157 | YES |
+| Voltage | 229.7918 | 230.3114 | 0.5196 | NO |
+| Volume Flow RateRMS | 68.5194 | 29.7573 | 38.7620 | YES |
+
+**5 out of 8 sensors** show clear separation between normal and fault states. Notably, Volume Flow RateRMS shows the largest difference (38.76), which is expected — closing a valve directly restricts flow. No missing values or near-constant columns were found.
+
+### Step 4 — Preprocessing Pipeline
+
+#### 4.1 Missing Value Handling
+Forward-fill followed by backward-fill was applied to handle any gaps in the time-series. No missing values were found in this dataset.
+
+#### 4.2 Chronological Train/Test Split
+The dataset was split **chronologically** — the first 80% of rows used for training and the last 20% for testing. This approach is critical for time-series data to prevent future readings from leaking into the training set, which would produce artificially inflated results.
+
+#### 4.3 Normalisation
+MinMaxScaler was applied to scale all sensor features to the `[0, 1]` range. The scaler was **fitted on the training set only** and then applied to both train and test sets — again to prevent data leakage.
+
+#### 4.4 Sliding Window Construction
+Raw time-series rows were converted into fixed-length windows for supervised classification. Each window captures a sequence of consecutive sensor readings:
+
+- **Window size:** 30 timesteps (30 seconds at 1 Hz sampling rate)
+- **Step size:** 5 (windows overlap, maximising training samples)
+- **Label rule:** A window is labelled `1` (fault) if **any** row within it contains a fault, otherwise `0` (normal)
+
+This approach is standard for fault detection with time-series sensor data and ensures the model learns patterns leading up to a fault, not just the moment of failure.
+
+| Split | Windows | Normal | Fault |
+|---|---|---|---|
+| Train (before SMOTE) | 5,095 | 3,913 | 1,182 |
+| Test | 1,270 | 770 | 500 |
+
+#### 4.5 SMOTE Oversampling
+Synthetic Minority Oversampling Technique (SMOTE) was applied to the training windows to balance the class distribution. SMOTE generates synthetic fault samples by interpolating between existing fault examples rather than simply duplicating them.
+
+| Split | Windows | Normal | Fault |
+|---|---|---|---|
+| Train (after SMOTE) | 7,826 | 3,913 | 3,913 |
+
+SMOTE was applied **only to the training set** — the test set remains untouched to reflect real-world class distribution.
+
+---
+
+## Models
+
+Five supervised classification models were trained and evaluated, covering a range of complexity from simple linear baselines to ensemble methods.
+
+### Logistic Regression
+A linear model that learns a weighted combination of input features to separate classes. Used as the baseline — if more complex models do not significantly outperform this, it suggests the data is linearly separable. Configured with `class_weight="balanced"` as an additional safeguard against residual imbalance.
+
+### Decision Tree
+A tree-based model that recursively splits the feature space using if/else rules on individual sensor values. Interpretable and fast but can overfit. Configured with `class_weight="balanced"`.
+
+### Random Forest
+An ensemble of 100 decision trees, each trained on a random subset of features and data. The final prediction is determined by majority vote across all trees. Random Forest is robust to overfitting, handles noisy sensor data well, and performs strongly on tabular time-series problems.
+
+### Support Vector Machine (SVM)
+Finds the optimal hyperplane that maximises the margin between normal and fault classes in high-dimensional feature space. Uses an RBF (radial basis function) kernel to handle non-linear boundaries. Configured with `class_weight="balanced"`.
+
+### K-Nearest Neighbours (KNN)
+A distance-based model that classifies each window by looking at the 5 most similar windows in the training set and taking a majority vote. Simple but computationally expensive and sensitive to the scale of features — which is why normalisation was applied first.
+
+---
+
+## Results
+
+### Per-Model Performance
+
+| Model | Accuracy | Precision | Recall | F1-Score |
+|---|---|---|---|---|
+| Logistic Regression | 86.38% | 100.00% | 65.40% | 79.08% |
+| Decision Tree | 76.77% | 67.17% | 80.20% | 73.11% |
+| Random Forest | **92.52%** | **99.51%** | **81.40%** | **89.55%** |
+| SVM | 80.39% | 98.83% | 50.80% | 67.11% |
+| KNN | 48.74% | 40.64% | 65.60% | 50.19% |
+
+### Confusion Matrix Summary
+
+| Model | TN | FP | FN | TP |
+|---|---|---|---|---|
+| Logistic Regression | 770 | 0 | 173 | 327 |
+| Decision Tree | 574 | 196 | 99 | 401 |
+| Random Forest | 768 | 2 | 93 | 407 |
+| SVM | 767 | 3 | 246 | 254 |
+| KNN | 291 | 479 | 172 | 328 |
+
+- **TP (True Positive):** Fault correctly identified as fault
+- **TN (True Negative):** Normal correctly identified as normal
+- **FP (False Positive):** Normal incorrectly flagged as fault
+- **FN (False Negative):** Fault missed — most critical error in maintenance
+
+### Key Observations
+
+- **Random Forest** is the clear best performer with 89.55% F1 and only 2 false positives and 93 missed faults out of 500 fault windows
+- **Logistic Regression** achieved perfect precision (no false alarms) but missed 173 faults — too conservative for a safety-critical maintenance system
+- **SVM** had very high precision but poor recall — same issue as Logistic Regression
+- **Decision Tree** had the best recall (80.2%) among the weaker models but generated 196 false alarms
+- **KNN** struggled significantly, producing 479 false positives — not suitable for this data structure
+
+---
+
+## Dataset Fitness Verdict
+
+| Criterion | Result |
+|---|---|
+| F1 >= 80% target |  MET — Random Forest at 89.55% |
+| No missing values |  Clean data |
+| Meaningful fault labels | Present in valve1 and valve2 |
+| Class imbalance manageable | 3:1 ratio handled well with SMOTE |
+| Data volume |  31,875 rows — smaller than ideal |
+| Fault variety |  Only valve closure faults |
+| Experiment continuity |  Short individual experiments (~20 min each) |
+
+**Conclusion:** The SKAB dataset is capable of supporting supervised fault classification and meets the F1 target. However, its limited size and fault variety make the **Kaggle Pump Sensor dataset** (220,000 rows, continuous recording, richer fault types) a stronger primary choice for the project's final model.
+
+---
+
+## How to Run
+
+### Requirements
+```
+pip install numpy pandas scikit-learn imbalanced-learn
+```
+
+### Data Folder Structure
+```
+data/
+├── anomaly-free.csv
+├── valve1/
+│   ├── 0.csv
+│   └── ... (up to 15.csv)
+├── valve2/
+│   ├── 0.csv
+│   └── ... (up to 3.csv)
+├── processed/
+└── raw/
+```
+
+### Run the Script
+```
+python skab_dataset_evaluation.py
+```
+
+The script runs the full pipeline automatically and prints all results to the terminal.
+
+---
+
+## References
+- Skoltech Anomaly Benchmark (SKAB): https://github.com/waico/SKAB
