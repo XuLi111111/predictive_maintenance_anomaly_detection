@@ -1,0 +1,65 @@
+============================================================
+Model          : Logistic Regression
+Author         : parinitha
+Dataset        : dataset1
+Script         : train_lr.py
+============================================================
+
+HYPERPARAMETER TUNING
+----------------------------------------
+C values explored : [0.001, 0.01, 0.1, 1.0, 10.0]
+Selection metric  : Val False Positive Rate (minimised)
+Tuning results    :
+  C=0.001     Val FPR=2.8523%  Predicted faults=7,323
+  C=0.01      Val FPR=2.9092%  Predicted faults=7,469
+  C=0.1       Val FPR=2.9213%  Predicted faults=7,500
+  C=1.0       Val FPR=2.9306%  Predicted faults=7,524
+  C=10.0      Val FPR=2.9314%  Predicted faults=7,526
+Best C selected   : 0.001
+
+FINAL MODEL PARAMETERS
+----------------------------------------
+  C             : 0.001
+  class_weight  : balanced
+  solver        : lbfgs
+  max_iter      : 1000
+  random_state  : 42
+
+TEST SET METRICS
+----------------------------------------
+  Precision           : 0.0000  (0.00%)
+  Recall (Sensitivity): 0.0333  (3.33%)
+  F1-Score            : 0.0000  (0.00%)
+  False Positive Rate : 0.2234  (22.3443%)
+  False Negative Rate : 0.9667  (96.67%)
+
+CONFUSION MATRIX
+----------------------------------------
+                       Predicted Normal  Predicted Fault
+  Actual Normal                 476,701          137,164
+  Actual Fault                       29                1
+
+CLASSIFICATION REPORT
+----------------------------------------
+              precision    recall  f1-score   support
+
+      Normal       1.00      0.78      0.87    613865
+       Fault       0.00      0.03      0.00        30
+
+    accuracy                           0.78    613895
+   macro avg       0.50      0.40      0.44    613895
+weighted avg       1.00      0.78      0.87    613895
+
+SUMMARY
+----------------------------------------
+  Training time : 18.92 seconds
+  Best C        : 0.001
+  Faults caught : 1 / 30 (3.33% recall)
+  False alarms  : 137,164 out of 613,865 normal windows (22.3443% FPR)
+
+  Observations:
+  Logistic Regression is a linear baseline model. With class_weight='balanced',
+  it compensates for the severe class imbalance (0.30% fault rate in training).
+  The model is fast to train but may underfit non-linear fault patterns.
+  Recall on the test set indicates how many of the 30 fault windows were detected.
+============================================================
