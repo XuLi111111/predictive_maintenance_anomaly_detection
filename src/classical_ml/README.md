@@ -1,4 +1,6 @@
 # Classical ML Baseline Models — Fault Detection
+**CITS5206 Capstone Project | Group 14 | University of Western Australia**
+**Author: Parinitha Gurram | Branch: Parinitha-branch**
 
 ---
 
@@ -80,7 +82,7 @@ Uses `LinearSVC` instead of `SVC` with RBF kernel. For high-dimensional data (24
 |---|---|---|---|---|---|---|
 | Logistic Regression | 0.00% | 3.33% | 0.00% | 22.34% | 96.67% | 1 / 30 |
 | KNN | 0.00% | 0.00% | 0.00% | 2.13% | 100.00% | 0 / 30 |
-| SVM | — | — | — | — | — | In progress |
+| SVM (LinearSVC) | 0.00% | 0.00% | 0.00% | 21.85% | 100.00% | 0 / 30 |
 
 ### Confusion Matrices
 
@@ -95,6 +97,13 @@ Actual Fault                    29                 1
 ```
                      Predicted Normal   Predicted Fault
 Actual Normal              600,804            13,061
+Actual Fault                    30                 0
+```
+
+**SVM (LinearSVC)**
+```
+                     Predicted Normal   Predicted Fault
+Actual Normal              479,719           134,146
 Actual Fault                    30                 0
 ```
 
@@ -122,6 +131,15 @@ This extremely low fault density in the test set (0.005%) means even small class
 - SMOTE helped reduce false alarms but the model still missed all faults
 - KNN struggles with high-dimensional data (240 features) — distance metrics become less meaningful in high dimensions (curse of dimensionality)
 - Best k selected: 3 (smallest neighbourhood minimised false alarms on val)
+
+### SVM (LinearSVC)
+
+- Caught 0 out of 30 fault windows (0% recall)
+- Generated 134,146 false alarms — high FPR (21.85%), similar to LR
+- LinearSVC was chosen over RBF kernel SVC as it scales to the full 854k training set without subsampling
+- Best C selected: 0.001 — stronger regularisation reduced false alarms on val
+- Training time: 319.98 seconds on full dataset
+- Despite training on all data, the linear boundary still cannot isolate the fault signal from the extreme imbalance
 
 ### Overall baseline conclusion
 
