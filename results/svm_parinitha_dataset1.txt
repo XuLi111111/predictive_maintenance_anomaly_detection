@@ -1,0 +1,71 @@
+============================================================
+Model          : Support Vector Machine (SVM)
+Author         : parinitha
+Dataset        : dataset1
+Script         : train_svm.py
+============================================================
+
+MODEL CHOICE NOTE
+----------------------------------------
+  LinearSVC is used instead of SVC with RBF kernel.
+  Reason: 240 features (high-dimensional) — linear kernels
+  perform as well or better than RBF and scale to 800k+ rows.
+
+HYPERPARAMETER TUNING
+----------------------------------------
+  C values explored : [0.001, 0.01, 0.1, 1.0]
+  Kernel            : linear (LinearSVC)
+  Selection metric  : Val False Positive Rate (minimised)
+  Tuning results    :
+  C=0.001     Val FPR=2.4901%  Predicted faults=6,393
+  C=0.01      Val FPR=2.5018%  Predicted faults=6,423
+  C=0.1       Val FPR=2.5045%  Predicted faults=6,430
+  C=1.0       Val FPR=2.5049%  Predicted faults=6,431
+  Best C selected   : 0.001
+
+FINAL MODEL PARAMETERS
+----------------------------------------
+  C             : 0.001
+  kernel        : linear (LinearSVC)
+  class_weight  : balanced
+  max_iter      : 2000
+  random_state  : 42
+
+TEST SET METRICS
+----------------------------------------
+  Precision           : 0.0000  (0.00%)
+  Recall (Sensitivity): 0.0000  (0.00%)
+  F1-Score            : 0.0000  (0.00%)
+  False Positive Rate : 0.2185  (21.8527%)
+  False Negative Rate : 1.0000  (100.00%)
+
+CONFUSION MATRIX
+----------------------------------------
+                       Predicted Normal  Predicted Fault
+  Actual Normal                 479,719          134,146
+  Actual Fault                       30                0
+
+CLASSIFICATION REPORT
+----------------------------------------
+              precision    recall  f1-score   support
+
+      Normal       1.00      0.78      0.88    613865
+       Fault       0.00      0.00      0.00        30
+
+    accuracy                           0.78    613895
+   macro avg       0.50      0.39      0.44    613895
+weighted avg       1.00      0.78      0.88    613895
+
+SUMMARY
+----------------------------------------
+  Training time : 319.98 seconds
+  Best C        : 0.001
+  Faults caught : 0 / 30 (0.00% recall)
+  False alarms  : 134,146 out of 613,865 normal windows (21.8527% FPR)
+
+  Observations:
+  LinearSVC trains on the full dataset without subsampling.
+  class_weight='balanced' compensates for the severe class imbalance.
+  Linear kernels are well-suited for high-dimensional feature spaces
+  such as the 240-feature flattened sliding window representation.
+============================================================
