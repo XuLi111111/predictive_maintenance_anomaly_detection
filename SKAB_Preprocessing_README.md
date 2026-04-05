@@ -18,8 +18,6 @@
 7. [How to Reproduce the Dataset](#7-how-to-reproduce-the-dataset)
 8. [How to Use the Processed Dataset](#8-how-to-use-the-processed-dataset)
 9. [Important Notes & Caveats](#9-important-notes--caveats)
-10. [Classical ML Baseline Reference](#10-classical-ml-baseline-reference)
-
 ---
 
 ## 1. Project Overview
@@ -408,52 +406,3 @@ this is by design (cross-hardware generalization test).
 
 ---
 
-## 10. Classical ML Baseline Reference
-
-A classical ML baseline is provided in `SKAB_ClassicalML_Baseline_By_David.py`.
-Run it **after** generating the `.npz` file. It trains 7 models on the
-flattened (N, 160) features and saves all model weights.
-
-**Run from inside the `SKAB/` directory:**
-
-```bash
-python SKAB_ClassicalML_Baseline_By_David.py
-```
-
-**Results on test set (valve2):**
-
-| Model | Accuracy | Anomaly Precision | Anomaly Recall | Anomaly F1 |
-|-------|----------|-------------------|----------------|------------|
-| Logistic Regression | 93.49% | 0.9755 | 0.8455 | 0.9058 |
-| XGBoost | 92.61% | **0.9944** | 0.8049 | 0.8897 |
-| Gradient Boosting | 89.87% | 0.8811 | 0.8397 | 0.8599 |
-| Random Forest | 89.25% | 0.8635 | 0.8429 | 0.8530 |
-| Extra Trees | 88.18% | 0.8989 | 0.7669 | 0.8277 |
-| KNN | 80.62% | 0.8768 | 0.5544 | 0.6793 |
-| SVM (RBF) | 75.79% | 0.9409 | 0.3690 | 0.5301 |
-
-Saved model weights location:
-```
-data/processed/dataset2/skab_classical_models/
-├── scaler.pkl      ← StandardScaler fitted on X_train (flattened)
-├── model_lr.pkl
-├── model_rf.pkl
-├── model_svm.pkl
-├── model_et.pkl
-├── model_gb.pkl
-├── model_knn.pkl
-└── model_xgb.pkl
-```
-
-Load a saved model:
-```python
-import joblib
-import numpy as np
-
-scaler = joblib.load("data/processed/dataset2/skab_classical_models/scaler.pkl")
-model  = joblib.load("data/processed/dataset2/skab_classical_models/model_xgb.pkl")
-
-X_test_flat   = X_test.reshape(X_test.shape[0], -1)
-X_test_scaled = scaler.transform(X_test_flat)
-y_pred        = model.predict(X_test_scaled)
-```
