@@ -5,6 +5,7 @@ from sklearn.preprocessing import StandardScaler
 from xgboost import XGBClassifier
 from sklearn.ensemble import AdaBoostClassifier
 from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import GradientBoostingClassifier
 
 # ============================================================
 # SKAB Boosting Models Training (Strategy A) - By Nafisa
@@ -111,3 +112,28 @@ print(f"Validation accuracy: {val_score * 100:.2f}%")
 ada_path = os.path.join(MODEL_SAVE_DIR, "boosting_adaboost.pkl")
 joblib.dump(ada, ada_path)
 print(f"AdaBoost saved to: {ada_path}")
+
+# =====================
+# Gradient Boosting
+# =====================
+print("\n" + "=" * 60)
+print("TRAINING: Gradient Boosting")
+print("=" * 60)
+
+gb = GradientBoostingClassifier(
+    n_estimators=200,
+    max_depth=4,
+    learning_rate=0.05,
+    subsample=0.8,
+    min_samples_split=10,
+    random_state=42
+)
+
+gb.fit(X_train_flat, y_train)
+
+val_score = gb.score(X_val_flat, y_val)
+print(f"Validation accuracy: {val_score * 100:.2f}%")
+
+gb_path = os.path.join(MODEL_SAVE_DIR, "boosting_gradient_boosting.pkl")
+joblib.dump(gb, gb_path)
+print(f"Gradient Boosting saved to: {gb_path}")
