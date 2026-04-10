@@ -3,6 +3,8 @@ import numpy as np
 import joblib
 from sklearn.preprocessing import StandardScaler
 from xgboost import XGBClassifier
+from sklearn.ensemble import AdaBoostClassifier
+from sklearn.tree import DecisionTreeClassifier
 
 # ============================================================
 # SKAB Boosting Models Training (Strategy A) - By Nafisa
@@ -86,3 +88,26 @@ xgb.fit(
 xgb_path = os.path.join(MODEL_SAVE_DIR, "boosting_xgboost.pkl")
 joblib.dump(xgb, xgb_path)
 print(f"XGBoost saved to: {xgb_path}")
+
+# =====================
+# AdaBoost
+# =====================
+print("\n" + "=" * 60)
+print("TRAINING: AdaBoost")
+print("=" * 60)
+
+ada = AdaBoostClassifier(
+    estimator=DecisionTreeClassifier(max_depth=3),
+    n_estimators=200,
+    learning_rate=0.1,
+    random_state=42
+)
+
+ada.fit(X_train_flat, y_train)
+
+val_score = ada.score(X_val_flat, y_val)
+print(f"Validation accuracy: {val_score * 100:.2f}%")
+
+ada_path = os.path.join(MODEL_SAVE_DIR, "boosting_adaboost.pkl")
+joblib.dump(ada, ada_path)
+print(f"AdaBoost saved to: {ada_path}")
