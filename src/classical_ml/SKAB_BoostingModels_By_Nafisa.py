@@ -1,11 +1,13 @@
 import os
 import numpy as np
+import pandas as pd
 import joblib
 from sklearn.preprocessing import StandardScaler
 from xgboost import XGBClassifier
 from sklearn.ensemble import AdaBoostClassifier
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import GradientBoostingClassifier
+from lightgbm import LGBMClassifier
 
 # ============================================================
 # SKAB Boosting Models Training (Strategy A) - By Nafisa
@@ -137,3 +139,36 @@ print(f"Validation accuracy: {val_score * 100:.2f}%")
 gb_path = os.path.join(MODEL_SAVE_DIR, "boosting_gradient_boosting.pkl")
 joblib.dump(gb, gb_path)
 print(f"Gradient Boosting saved to: {gb_path}")
+
+# =====================
+# LightGBM
+# =====================
+print("\n" + "=" * 60)
+print("TRAINING: LightGBM")
+print("=" * 60)
+
+lgbm = LGBMClassifier(
+    n_estimators=300,
+    max_depth=4,
+    learning_rate=0.05,
+    subsample=0.8,
+    colsample_bytree=0.8,
+    min_child_samples=50,
+    num_leaves=20,
+    random_state=42,
+    n_jobs=-1,
+    verbose=-1
+)
+
+lgbm.fit(
+    X_train_flat, y_train,
+    eval_set=[(X_val_flat, y_val)]
+)
+
+X_val_df = pd.DataFrame(X_val_flat)
+val_score = lgbm.score(X_val_df, y_val)
+print(f"Validation accuracy: {val_score * 100:.2f}%")
+
+lgbm_path = os.path.join(MODEL_SAVE_DIR, "boosting_lightgbm.pkl")
+joblib.dump(lgbm, lgbm_path)
+print(f"LightGBM saved to: {lgbm_path}")
