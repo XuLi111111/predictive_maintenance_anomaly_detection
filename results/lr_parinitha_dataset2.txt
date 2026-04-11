@@ -1,0 +1,73 @@
+============================================================
+Model          : Logistic Regression
+Author         : parinitha
+Dataset        : SKAB — Strategy A (dataset2)
+Script         : train_skab_lr.py
+============================================================
+
+DATASET INFO
+----------------------------------------
+  Source        : SKAB valve1 (train/val) + valve2 (test)
+  Window size   : 20 timesteps
+  Horizon       : 10 timesteps (early warning label)
+  Input shape   : (N, 20, 8) -> flattened to (N, 160)
+  Scaling       : StandardScaler fitted on train only
+
+HYPERPARAMETER TUNING
+----------------------------------------
+  C values explored : [0.001, 0.01, 0.1, 1.0, 10.0]
+  Selection metric  : Validation F1-score (maximised)
+  Tuning results    :
+  C=0.001     Val Recall=84.42%  Val F1=90.98%  Val Precision=98.64%
+  C=0.01      Val Recall=85.22%  Val F1=90.88%  Val Precision=97.35%
+  C=0.1       Val Recall=85.40%  Val F1=90.08%  Val Precision=95.30%
+  C=1.0       Val Recall=85.40%  Val F1=89.59%  Val Precision=94.20%
+  C=10.0      Val Recall=85.40%  Val F1=89.50%  Val Precision=94.01%
+  Best C selected   : 0.001
+
+FINAL MODEL PARAMETERS
+----------------------------------------
+  C             : 0.001
+  class_weight  : balanced
+  solver        : lbfgs
+  max_iter      : 1000
+  random_state  : 42
+
+TEST SET METRICS
+----------------------------------------
+  Precision           : 0.9951  (99.51%)
+  Recall (Sensitivity): 0.7798  (77.98%)
+  F1-Score            : 0.8744  (87.44%)
+  False Positive Rate : 0.0023  (0.2270%)
+  False Negative Rate : 0.2202  (22.02%)
+
+CONFUSION MATRIX
+----------------------------------------
+                       Predicted Normal  Predicted Fault
+  Actual Normal                   2,637                6
+  Actual Fault                      342            1,211
+
+CLASSIFICATION REPORT
+----------------------------------------
+              precision    recall  f1-score   support
+
+      Normal       0.89      1.00      0.94      2643
+       Fault       1.00      0.78      0.87      1553
+
+    accuracy                           0.92      4196
+   macro avg       0.94      0.89      0.91      4196
+weighted avg       0.93      0.92      0.91      4196
+
+SUMMARY
+----------------------------------------
+  Training time : 0.05 seconds
+  Best C        : 0.001
+  Faults caught : 1211 / 1553 (77.98% recall)
+  False alarms  : 6 out of 2,643 normal windows (0.2270% FPR)
+
+  Observations:
+  Logistic Regression is the linear baseline model for SKAB dataset2.
+  With class_weight='balanced' it compensates for the ~36% fault rate.
+  Input is flattened from (N,20,8) to (N,160) for sklearn compatibility.
+  StandardScaler applied after flattening — fitted on train set only.
+============================================================

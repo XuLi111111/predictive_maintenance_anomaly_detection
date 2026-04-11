@@ -1,0 +1,72 @@
+============================================================
+Model          : K-Nearest Neighbours (KNN)
+Author         : parinitha
+Dataset        : SKAB — Strategy A (dataset2)
+Script         : train_skab_knn.py
+============================================================
+
+DATASET INFO
+----------------------------------------
+  Source        : SKAB valve1 (train/val) + valve2 (test)
+  Window size   : 20 timesteps
+  Horizon       : 10 timesteps (early warning label)
+  Input shape   : (N, 20, 8) -> flattened to (N, 160)
+  Scaling       : StandardScaler fitted on train only
+
+HYPERPARAMETER TUNING
+----------------------------------------
+  k values explored : [3, 5, 7, 11, 15]
+  Selection metric  : Validation F1-score (maximised)
+  Tuning results    :
+  k=3       Val Recall=84.30%  Val F1=80.61%  Val Precision=77.22%
+  k=5       Val Recall=84.30%  Val F1=83.64%  Val Precision=82.98%
+  k=7       Val Recall=83.87%  Val F1=85.09%  Val Precision=86.35%
+  k=11      Val Recall=82.83%  Val F1=87.34%  Val Precision=92.37%
+  k=15      Val Recall=82.71%  Val F1=88.41%  Val Precision=94.95%
+  Best k selected   : 15
+
+FINAL MODEL PARAMETERS
+----------------------------------------
+  n_neighbors   : 15
+  metric        : minkowski (default)
+  weights       : uniform (default)
+  imbalance     : none needed (~36% fault rate)
+
+TEST SET METRICS
+----------------------------------------
+  Precision           : 0.9548  (95.48%)
+  Recall (Sensitivity): 0.5441  (54.41%)
+  F1-Score            : 0.6932  (69.32%)
+  False Positive Rate : 0.0151  (1.5134%)
+  False Negative Rate : 0.4559  (45.59%)
+
+CONFUSION MATRIX
+----------------------------------------
+                       Predicted Normal  Predicted Fault
+  Actual Normal                   2,603               40
+  Actual Fault                      708              845
+
+CLASSIFICATION REPORT
+----------------------------------------
+              precision    recall  f1-score   support
+
+      Normal       0.79      0.98      0.87      2643
+       Fault       0.95      0.54      0.69      1553
+
+    accuracy                           0.82      4196
+   macro avg       0.87      0.76      0.78      4196
+weighted avg       0.85      0.82      0.81      4196
+
+SUMMARY
+----------------------------------------
+  Training time : 0.01 seconds
+  Best k        : 15
+  Faults caught : 845 / 1553 (54.41% recall)
+  False alarms  : 40 out of 2,643 normal windows (1.5134% FPR)
+
+  Observations:
+  KNN classifies each window by majority vote from k nearest neighbours.
+  SKAB has ~36% fault rate — much more balanced than Zenodo (0.3%).
+  No SMOTE needed here. StandardScaler ensures fair distance computation.
+  KNN prediction is slow on large datasets due to distance computation.
+============================================================
