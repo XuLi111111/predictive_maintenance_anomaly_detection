@@ -1,0 +1,22 @@
+Model: LightGBM
+================================================================================
+Confusion Matrix:
+[[2595   48]
+ [ 296 1257]]
+
+Classification Report:
+              precision    recall  f1-score   support
+
+           0     0.8976    0.9818    0.9378      2643
+           1     0.9632    0.8094    0.8796      1553
+
+    accuracy                         0.9180      4196
+   macro avg     0.9304    0.8956    0.9087      4196
+weighted avg     0.9219    0.9180    0.9163      4196
+
+Accuracy : 0.9180
+Precision: 0.9632
+Recall   : 0.8094
+F1-score : 0.8796
+ROC-AUC  : 0.9526
+PR-AUC   : 0.9493
