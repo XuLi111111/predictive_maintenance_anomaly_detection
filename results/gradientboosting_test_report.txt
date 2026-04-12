@@ -1,0 +1,22 @@
+Model: GradientBoosting
+================================================================================
+Confusion Matrix:
+[[2505  138]
+ [ 223 1330]]
+
+Classification Report:
+              precision    recall  f1-score   support
+
+           0     0.9183    0.9478    0.9328      2643
+           1     0.9060    0.8564    0.8805      1553
+
+    accuracy                         0.9140      4196
+   macro avg     0.9121    0.9021    0.9066      4196
+weighted avg     0.9137    0.9140    0.9134      4196
+
+Accuracy : 0.9140
+Precision: 0.9060
+Recall   : 0.8564
+F1-score : 0.8805
+ROC-AUC  : 0.9564
+PR-AUC   : 0.9551
