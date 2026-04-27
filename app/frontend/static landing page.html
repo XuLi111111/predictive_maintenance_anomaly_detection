@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>pump.detect — Pump Anomaly Early Warning System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;700&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<!-- Performance Summary component styles (added by Parinitha, issue #26) -->
+<link rel="stylesheet" href="components/performance_summary/performance_summary.css">
+
+<style>
+/* ── Reset ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ── Design tokens ── */
+:root {
+  --c-black:       #0f0f0f;
+  --c-white:       #ffffff;
+  --c-bg:          #ffffff;
+  --c-surface:     #f7f7f6;
+  --c-border:      rgba(0,0,0,0.12);
+  --c-border-med:  rgba(0,0,0,0.25);
+  --c-text:        #0f0f0f;
+  --c-muted:       #6b7280;
+  --c-hint:        #9ca3af;
+  --c-blue:        #1d4ed8;
+  --c-blue-bg:     #eff6ff;
+  --c-amber:       #b45309;
+  --c-amber-bg:    #fffbeb;
+  --r-md:          8px;
+  --r-lg:          12px;
+  --r-pill:        100px;
+}
+
+body {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  background: #f4f4f3;
+  color: var(--c-text);
+  min-height: 100vh;
+  padding: 24px;
+  letter-spacing: -0.005em;
+}
+
+.page {
+  max-width: 780px;
+  margin: 0 auto;
+}
+
+/* ── Nav ── */
+.nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1.25rem;
+  border: 0.5px solid var(--c-border);
+  border-radius: var(--r-lg);
+  margin-bottom: 10px;
+  background: var(--c-bg);
+}
+.brand { display: flex; align-items: center; gap: 8px; }
+.brand-mark {
+  width: 22px; height: 22px;
+  background: var(--c-black);
+  border-radius: 6px;
+  position: relative;
+}
+.brand-mark::after {
+  content: '';
+  position: absolute; inset: 4px;
+  border: 1.5px solid var(--c-white);
+  border-radius: 3px;
+  border-top: none; border-right: none;
+}
+.brand-name { font-size: 14px; font-weight: 500; letter-spacing: -0.02em; }
+.brand-name span { color: var(--c-hint); font-weight: 400; }
+.nav-mid { display: flex; gap: 1.25rem; font-size: 12px; color: var(--c-muted); }
+.nav-mid a { text-decoration: none; color: inherit; transition: color .15s; }
+.nav-mid a:hover { color: var(--c-text); }
+.nav-cta {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 12px; font-weight: 500;
+  padding: 7px 14px;
+  border-radius: var(--r-md);
+  background: var(--c-black); color: var(--c-white);
+  border: none; cursor: pointer; transition: opacity .15s;
+}
+.nav-cta:hover { opacity: 0.82; }
+
+/* ── Hero ── */
+.hero {
+  border: 0.5px solid var(--c-border);
+  border-radius: var(--r-lg);
+  padding: 2.5rem 1.75rem 0;
+  background: var(--c-bg);
+  margin-bottom: 10px;
+  overflow: hidden;
+}
+.eyebrow {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px; font-weight: 500;
+  color: var(--c-blue); background: var(--c-blue-bg);
+  padding: 5px 12px; border-radius: var(--r-pill);
+  margin-bottom: 1.25rem; letter-spacing: 0.02em;
+}
+.eyebrow-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--c-blue); }
+.headline {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-weight: 700; font-size: 44px; line-height: 1.02;
+  letter-spacing: -0.035em; margin-bottom: 1rem; max-width: 560px;
+}
+.headline em {
+  font-family: 'Instrument Serif', serif;
+  font-style: italic; font-weight: 400;
+  letter-spacing: -0.01em; color: var(--c-blue);
+}
+.hero-sub {
+  font-size: 15px; line-height: 1.55;
+  color: var(--c-muted); max-width: 500px;
+  margin-bottom: 1.5rem;
+}
+.cta-row { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 2rem; flex-wrap: wrap; }
+.cta-p {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 13px; font-weight: 500;
+  padding: 11px 22px; border-radius: var(--r-pill);
+  background: var(--c-black); color: var(--c-white);
+  border: none; cursor: pointer; transition: opacity .15s;
+  display: inline-flex; align-items: center; gap: 6px;
+  text-decoration: none;
+}
+.cta-p:hover { opacity: 0.82; }
+.cta-s {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 13px; font-weight: 500;
+  padding: 11px 20px; border-radius: var(--r-pill);
+  background: transparent; color: var(--c-text);
+  border: 0.5px solid var(--c-border-med);
+  cursor: pointer; transition: background .15s;
+  text-decoration: none;
+}
+.cta-s:hover { background: var(--c-surface); }
+
+/* ── Hero mockup ── */
+.mockup-wrap {
+  border: 0.5px solid var(--c-border);
+  border-radius: 12px 12px 0 0;
+  border-bottom: none;
+  background: var(--c-surface);
+  padding: 12px;
+  margin: 0 -0.25rem;
+}
+.mockup-bar { display: flex; align-items: center; gap: 6px; margin-bottom: 10px; }
+.m-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--c-border-med); }
+.mockup-url {
+  margin-left: 12px;
+  font-family: 'JetBrains Mono', monospace; font-size: 10px;
+  color: var(--c-hint); background: var(--c-bg);
+  padding: 3px 10px; border-radius: 4px;
+  border: 0.5px solid var(--c-border);
+}
+.mockup-body {
+  background: var(--c-bg); border-radius: 6px;
+  border: 0.5px solid var(--c-border); padding: 14px;
+}
+.mock-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.mock-title { font-size: 12px; font-weight: 500; }
+.mock-badge {
+  font-family: 'JetBrains Mono', monospace; font-size: 9px;
+  color: var(--c-amber); background: var(--c-amber-bg);
+  padding: 3px 8px; border-radius: var(--r-pill);
+  display: inline-flex; align-items: center; gap: 4px;
+}
+.mock-badge-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--c-amber); }
+.mock-chart { width: 100%; height: 90px; display: block; }
+.mock-stats { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin-top: 10px; }
+.mock-stat { background: var(--c-surface); border-radius: 6px; padding: 8px 10px; }
+.mock-stat-k {
+  font-family: 'JetBrains Mono', monospace; font-size: 8px;
+  color: var(--c-hint); letter-spacing: 0.05em;
+  text-transform: uppercase; margin-bottom: 2px;
+}
+.mock-stat-v { font-size: 14px; font-weight: 700; letter-spacing: -0.02em; }
+
+/* ── Partners ── */
+.partners {
+  border: 0.5px solid var(--c-border);
+  border-radius: var(--r-lg);
+  padding: 1.25rem 1.5rem;
+  background: var(--c-bg);
+  margin-bottom: 10px;
+  display: flex; align-items: center; gap: 2rem; flex-wrap: wrap;
+}
+.partners-label {
+  font-family: 'JetBrains Mono', monospace; font-size: 10px;
+  color: var(--c-hint); letter-spacing: 0.1em;
+  text-transform: uppercase; flex-shrink: 0;
+}
+.logo-strip { display: flex; align-items: center; gap: 2rem; flex: 1; flex-wrap: wrap; }
+.pm-wordmark {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 16px; font-weight: 700; letter-spacing: 0.02em;
+  color: var(--c-text);
+  display: flex; align-items: center; gap: 6px;
+}
+.pm-dot { width: 14px; height: 14px; background: var(--c-text); border-radius: 50%; }
+.uwa-block {
+  border-left: 0.5px solid var(--c-border-med);
+  padding-left: 1.25rem;
+}
+.uwa-wordmark {
+  font-family: 'Instrument Serif', serif;
+  font-size: 18px; font-weight: 400; letter-spacing: 0.06em;
+  color: var(--c-text); display: block;
+}
+.uwa-sub {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 9px; color: var(--c-hint);
+  letter-spacing: 0.15em; text-transform: uppercase; display: block; margin-top: -2px;
+}
+.placeholder-tag {
+  font-family: 'JetBrains Mono', monospace; font-size: 9px;
+  color: var(--c-hint); margin-left: auto; opacity: 0.6;
+}
+
+/* ── Benefits ── */
+.benefits {
+  border: 0.5px solid var(--c-border);
+  border-radius: var(--r-lg);
+  padding: 2rem 1.5rem;
+  background: var(--c-bg);
+  margin-bottom: 10px;
+}
+.sec-eyebrow {
+  font-family: 'JetBrains Mono', monospace; font-size: 10px;
+  color: var(--c-hint); letter-spacing: 0.1em;
+  text-transform: uppercase; margin-bottom: 0.75rem;
+}
+.sec-h {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-weight: 700; font-size: 26px; line-height: 1.15;
+  letter-spacing: -0.025em; margin-bottom: 0.5rem; max-width: 480px;
+}
+.sec-h em {
+  font-family: 'Instrument Serif', serif;
+  font-style: italic; font-weight: 400; color: var(--c-blue);
+}
+.sec-sub {
+  font-size: 14px; color: var(--c-muted);
+  line-height: 1.55; margin-bottom: 1.75rem; max-width: 460px;
+}
+.ben-grid { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 12px; }
+.ben { background: var(--c-surface); border-radius: var(--r-md); padding: 1.25rem 1rem; }
+.ben-n {
+  font-family: 'JetBrains Mono', monospace; font-size: 10px;
+  color: var(--c-hint); margin-bottom: 1.5rem; letter-spacing: 0.05em;
+}
+.ben-stat {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 28px; font-weight: 700; line-height: 1;
+  letter-spacing: -0.03em; margin-bottom: 6px;
+}
+.ben-stat .unit { font-size: 14px; font-weight: 500; color: var(--c-muted); margin-left: 2px; }
+.ben-label { font-size: 12px; color: var(--c-muted); line-height: 1.5; }
+
+/* ── Final CTA ── */
+.final {
+  border: 0.5px solid var(--c-border);
+  border-radius: var(--r-lg);
+  padding: 2.25rem 1.75rem;
+  background: var(--c-surface);
+  margin-bottom: 10px;
+  text-align: center;
+}
+.final-h {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-weight: 700; font-size: 28px; line-height: 1.1;
+  letter-spacing: -0.03em; margin-bottom: 0.5rem;
+}
+.final-h em {
+  font-family: 'Instrument Serif', serif;
+  font-style: italic; font-weight: 400; color: var(--c-blue);
+}
+.final-sub {
+  font-size: 14px; color: var(--c-muted);
+  margin: 0 auto 1.5rem; max-width: 400px; line-height: 1.55;
+}
+.final-ctas { display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap; }
+
+/* ── Footer ── */
+.foot {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 0.75rem 1.25rem;
+  font-family: 'JetBrains Mono', monospace; font-size: 10px;
+  color: var(--c-hint); letter-spacing: 0.04em; flex-wrap: wrap; gap: 8px;
+}
+
+/* ── Upload page ── */
+.upload-page { display: none; }
+.upload-page.active { display: block; }
+.landing-page.hidden { display: none; }
+
+.upload-section {
+  border: 0.5px solid var(--c-border);
+  border-radius: var(--r-lg);
+  padding: 2rem 1.75rem;
+  background: var(--c-bg);
+  margin-bottom: 10px;
+}
+.breadcrumb {
+  display: flex; align-items: center; gap: 6px;
+  font-family: 'JetBrains Mono', monospace; font-size: 11px;
+  color: var(--c-hint); margin-bottom: 1.5rem;
+}
+.breadcrumb .sep { opacity: 0.4; }
+.breadcrumb .current { color: var(--c-text); }
+.upload-h {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-weight: 700; font-size: 26px; letter-spacing: -0.025em; margin-bottom: 0.4rem;
+}
+.upload-sub { font-size: 14px; color: var(--c-muted); line-height: 1.55; margin-bottom: 1.75rem; }
+
+/* Drop zone */
+.drop-zone {
+  border: 1.5px dashed var(--c-border-med);
+  border-radius: var(--r-lg);
+  padding: 3rem 2rem;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color .2s, background .2s;
+  margin-bottom: 1rem;
+  position: relative;
+}
+.drop-zone:hover, .drop-zone.drag-over {
+  border-color: var(--c-blue);
+  background: var(--c-blue-bg);
+}
+.drop-zone input[type="file"] {
+  position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+}
+.drop-icon {
+  width: 40px; height: 40px; border-radius: 10px;
+  background: var(--c-surface); border: 0.5px solid var(--c-border);
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 0.75rem;
+}
+.drop-title { font-size: 15px; font-weight: 500; margin-bottom: 4px; }
+.drop-sub { font-size: 13px; color: var(--c-muted); }
+.drop-sub a { color: var(--c-blue); text-decoration: none; cursor: pointer; }
+.drop-sub a:hover { text-decoration: underline; }
+.drop-hint {
+  font-family: 'JetBrains Mono', monospace; font-size: 10px;
+  color: var(--c-hint); margin-top: 0.75rem; letter-spacing: 0.04em;
+}
+
+/* Schema pills */
+.schema-row {
+  display: flex; align-items: center; gap: 8px;
+  flex-wrap: wrap; margin-bottom: 1.5rem;
+}
+.schema-label {
+  font-family: 'JetBrains Mono', monospace; font-size: 10px;
+  color: var(--c-hint); letter-spacing: 0.08em; flex-shrink: 0;
+}
+.pill {
+  font-family: 'JetBrains Mono', monospace; font-size: 10px;
+  padding: 3px 10px; border-radius: var(--r-pill);
+  border: 0.5px solid var(--c-border);
+  background: var(--c-surface); color: var(--c-muted);
+}
+.pill.req { border-color: var(--c-blue); color: var(--c-blue); background: var(--c-blue-bg); }
+
+/* Model selector */
+.model-grid { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 8px; margin-bottom: 1.5rem; }
+.model-card {
+  border: 0.5px solid var(--c-border); border-radius: var(--r-md);
+  padding: 0.75rem; cursor: pointer; transition: border-color .15s, background .15s;
+}
+.model-card:hover { border-color: var(--c-blue); }
+.model-card.selected { border-color: var(--c-blue); background: var(--c-blue-bg); }
+.model-card.selected .mc-name { color: var(--c-blue); }
+.mc-tag {
+  font-family: 'JetBrains Mono', monospace; font-size: 9px;
+  color: var(--c-hint); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;
+}
+.mc-name { font-size: 12px; font-weight: 500; color: var(--c-text); }
+
+/* Divider */
+.divider { height: 0.5px; background: var(--c-border); margin: 1.25rem 0; }
+
+/* File preview (hidden until file chosen) */
+.file-preview {
+  display: none;
+  border: 0.5px solid var(--c-border); border-radius: var(--r-md);
+  padding: 0.875rem 1rem; margin-bottom: 1rem;
+  background: var(--c-surface);
+  align-items: center; gap: 10px;
+}
+.file-preview.visible { display: flex; }
+.fp-icon {
+  width: 32px; height: 32px; border-radius: 6px;
+  background: var(--c-blue-bg); border: 0.5px solid rgba(29,78,216,0.2);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.fp-name { font-size: 13px; font-weight: 500; }
+.fp-size { font-size: 12px; color: var(--c-muted); margin-top: 1px; }
+.fp-remove {
+  margin-left: auto; font-family: 'JetBrains Mono', monospace;
+  font-size: 10px; color: var(--c-hint); cursor: pointer; border: none;
+  background: none; padding: 4px 8px; border-radius: 4px; transition: color .15s;
+}
+.fp-remove:hover { color: #dc2626; }
+
+/* Validation notice */
+.validation-ok {
+  display: none; align-items: center; gap: 8px;
+  font-size: 12px; color: #15803d; background: #f0fdf4;
+  padding: 8px 12px; border-radius: var(--r-md);
+  border: 0.5px solid #bbf7d0; margin-bottom: 1rem;
+}
+.validation-ok.visible { display: flex; }
+
+/* Drop zone — file loaded state */
+.drop-zone.file-loaded {
+  border-color: var(--c-blue);
+  background: var(--c-blue-bg);
+}
+
+/* Breadcrumb link */
+.breadcrumb-link {
+  cursor: pointer;
+  color: var(--c-blue);
+}
+
+/* Small model-name variant */
+.mc-name--sm {
+  font-size: 12px;
+  font-weight: 500;
+}
+
+/* Run button */
+.run-btn {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 14px; font-weight: 500;
+  padding: 12px 28px; border-radius: var(--r-pill);
+  background: var(--c-black); color: var(--c-white);
+  border: none; cursor: pointer; transition: opacity .15s;
+  display: inline-flex; align-items: center; gap: 8px; width: 100%;
+  justify-content: center;
+}
+.run-btn:hover { opacity: 0.82; }
+.run-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+/* Sample CSV aside */
+.sample-aside {
+  border: 0.5px solid var(--c-border); border-radius: var(--r-lg);
+  padding: 1.25rem 1.5rem; background: var(--c-bg); margin-bottom: 10px;
+}
+.aside-h {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 14px; font-weight: 500; margin-bottom: 0.4rem;
+}
+.aside-sub { font-size: 13px; color: var(--c-muted); line-height: 1.55; margin-bottom: 0.875rem; }
+.code-block {
+  font-family: 'JetBrains Mono', monospace; font-size: 10px;
+  background: var(--c-surface); border: 0.5px solid var(--c-border);
+  border-radius: var(--r-md); padding: 10px 12px; line-height: 1.7;
+  color: var(--c-text); white-space: pre; overflow-x: auto; margin-bottom: 0.875rem;
+}
+.dl-btn {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 12px; font-weight: 500;
+  padding: 8px 16px; border-radius: var(--r-pill);
+  background: transparent; color: var(--c-text);
+  border: 0.5px solid var(--c-border-med); cursor: pointer;
+  transition: background .15s; display: inline-flex; align-items: center; gap: 6px;
+}
+.dl-btn:hover { background: var(--c-surface); }
+</style>
+</head>
+<body>
+
+<div class="page">
+
+<!-- ═══ LANDING PAGE ═══ -->
+<div class="landing-page" id="landing">
+
+  <nav class="nav">
+    <div class="brand">
+      <div class="brand-mark"></div>
+      <div class="brand-name">pump.detect <span>/ v1.0</span></div>
+    </div>
+    <div class="nav-mid">
+      <a href="#">Product</a>
+      <a href="#">How it works</a>
+      <a href="#">Docs</a>
+    </div>
+    <button class="nav-cta" onclick="showUpload()">Get started</button>
+  </nav>
+
+  <section class="hero">
+    <span class="eyebrow"><span class="eyebrow-dot"></span>Predictive maintenance · early warning</span>
+    <h1 class="headline">Catch pump failures <em>30 minutes</em> before they happen.</h1>
+    <p class="hero-sub">A drop-in early-warning layer for industrial centrifugal pumps. Upload sensor data, run pre-trained anomaly models, and know exactly when to intervene — no data science team required.</p>
+    <div class="cta-row">
+      <button class="cta-p" onclick="showUpload()">Try it with your data →</button>
+      <button class="cta-s">See it in action</button>
+    </div>
+    <div class="mockup-wrap">
+      <div class="mockup-bar">
+        <div class="m-dot"></div><div class="m-dot"></div><div class="m-dot"></div>
+        <div class="mockup-url">pump.detect / dashboard</div>
+      </div>
+      <div class="mockup-body">
+        <div class="mock-head">
+          <div class="mock-title">Prediction output — pump_03.csv</div>
+          <div class="mock-badge"><span class="mock-badge-dot"></span>Anomaly detected · 18 min lead</div>
+        </div>
+        <svg class="mock-chart" viewBox="0 0 600 90" preserveAspectRatio="none">
+          <rect width="600" height="90" fill="#f7f7f6"/>
+          <rect x="380" y="0" width="130" height="90" fill="#fffbeb" opacity="0.9"/>
+          <line x1="380" y1="0" x2="380" y2="90" stroke="#b45309" stroke-width="1" stroke-dasharray="2,3"/>
+          <polyline points="0,70 30,68 60,71 90,69 120,66 150,70 180,67 210,71 240,68 270,66 300,70 330,65 360,58 380,45 400,32 420,22 440,14 460,10 480,15 500,22 520,30 540,42 560,55 580,65 600,68"
+            fill="none" stroke="#1d4ed8" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+          <circle cx="460" cy="10" r="4" fill="#b45309"/>
+          <circle cx="460" cy="10" r="8" fill="none" stroke="#b45309" stroke-width="1" opacity="0.5"/>
+        </svg>
+        <div class="mock-stats">
+          <div class="mock-stat"><div class="mock-stat-k">Confidence</div><div class="mock-stat-v">94.2%</div></div>
+          <div class="mock-stat"><div class="mock-stat-k">Lead time</div><div class="mock-stat-v">18 min</div></div>
+          <div class="mock-stat"><div class="mock-stat-k">Active model</div><div class="mock-stat-v mc-name--sm">XGBoost</div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="partners">
+    <span class="partners-label">In collaboration with</span>
+    <div class="logo-strip">
+      <div class="pm-wordmark"><span class="pm-dot"></span>PROGRAMMED</div>
+      <div class="uwa-block">
+        <span class="uwa-wordmark">UWA</span>
+        <span class="uwa-sub">Mech. Engineering</span>
+      </div>
+    </div>
+    <span class="placeholder-tag">[logo placeholders]</span>
+  </section>
+
+  <section class="benefits">
+    <div class="sec-eyebrow">— why it matters</div>
+    <h2 class="sec-h">Turn sensor noise into <em>actionable lead time</em>.</h2>
+    <p class="sec-sub">Unplanned pump downtime is expensive. Our models surface anomalies minutes before a fault event, giving maintenance crews time to act instead of react.</p>
+    <div class="ben-grid">
+      <div class="ben">
+        <div class="ben-n">01</div>
+        <div class="ben-stat">30<span class="unit">min</span></div>
+        <div class="ben-label">Maximum failure lead time, giving crews a full maintenance window.</div>
+      </div>
+      <div class="ben">
+        <div class="ben-n">02</div>
+        <div class="ben-stat">0.91</div>
+        <div class="ben-label">Best F1 score across 10 trained models, evaluated on held-out SKAB data.</div>
+      </div>
+      <div class="ben">
+        <div class="ben-n">03</div>
+        <div class="ben-stat">26<span class="unit">ch</span></div>
+        <div class="ben-label">Sensor channels supported out of the box, with schema validation on upload.</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="final">
+    <h2 class="final-h">Ready to see your <em>next failure</em> early?</h2>
+    <p class="final-sub">Upload a CSV, pick a model, and get a probability timeline in under a minute.</p>
+    <div class="final-ctas">
+      <button class="cta-p" onclick="showUpload()">Start a prediction →</button>
+      <button class="cta-s" onclick="document.getElementById('landing').scrollTo(0,0)">Download sample CSV</button>
+    </div>
+  </section>
+
+  <div class="foot">
+    <span>CITS5206 capstone · Group 14 · UWA 2026</span>
+    <span>Client: Peter Whittaker</span>
+  </div>
+
+</div><!-- /landing -->
+
+
+<!-- ═══ UPLOAD PAGE ═══ -->
+<div class="upload-page" id="uploadPage">
+
+  <nav class="nav">
+    <div class="brand">
+      <div class="brand-mark"></div>
+      <div class="brand-name">pump.detect <span>/ v1.0</span></div>
+    </div>
+    <div class="nav-mid">
+      <a href="#" onclick="showLanding();return false;">← Back to home</a>
+      <a href="#">Docs</a>
+    </div>
+    <button class="nav-cta" onclick="showUpload()">Upload</button>
+  </nav>
+
+  <section class="upload-section">
+    <div class="breadcrumb">
+      <span class="breadcrumb-link" onclick="showLanding()">Home</span>
+      <span class="sep">/</span>
+      <span class="current">New prediction</span>
+    </div>
+    <h2 class="upload-h">New prediction run</h2>
+    <p class="upload-sub">Upload a SKAB-format CSV, select a model, and run anomaly detection in one click.</p>
+
+    <!-- Step 1: File drop -->
+    <div class="sec-eyebrow">— step 1 · upload your data</div>
+    <div class="drop-zone" id="dropZone">
+      <input type="file" accept=".csv" id="fileInput" onchange="handleFile(this)">
+      <div class="drop-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="1.5">
+          <path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14"/>
+        </svg>
+      </div>
+      <div class="drop-title">Drop your CSV here</div>
+      <div class="drop-sub">or <a onclick="document.getElementById('fileInput').click()">browse files</a></div>
+      <div class="drop-hint">CSV · SKAB FORMAT · 26 SENSOR CHANNELS · UTF-8</div>
+    </div>
+
+    <!-- File preview -->
+    <div class="file-preview" id="filePreview">
+      <div class="fp-icon">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1d4ed8" stroke-width="1.5">
+          <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/>
+        </svg>
+      </div>
+      <div>
+        <div class="fp-name" id="fileName">—</div>
+        <div class="fp-size" id="fileSize">—</div>
+      </div>
+      <button class="fp-remove" onclick="clearFile()">Remove ✕</button>
+    </div>
+
+    <!-- Validation OK -->
+    <div class="validation-ok" id="validationOk">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#15803d" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+      Schema validated — 26 sensor columns detected. File is ready to process.
+    </div>
+
+    <!-- Schema reference -->
+    <div class="schema-row">
+      <span class="schema-label">REQUIRED COLUMNS</span>
+      <span class="pill req">datetime</span>
+      <span class="pill">sensor_00</span>
+      <span class="pill">sensor_01</span>
+      <span class="pill">···</span>
+      <span class="pill">sensor_25</span>
+      <span class="pill req">label</span>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Step 2: Model selection -->
+    <div class="sec-eyebrow">— step 2 · select a model</div>
+    <div class="model-grid" id="modelGrid">
+      <div class="model-card selected" onclick="selectModel(this)">
+        <div class="mc-tag">Ensemble</div>
+        <div class="mc-name">XGBoost</div>
+      </div>
+      <div class="model-card" onclick="selectModel(this)">
+        <div class="mc-tag">Tree</div>
+        <div class="mc-name">Random Forest</div>
+      </div>
+      <div class="model-card" onclick="selectModel(this)">
+        <div class="mc-tag">Tree</div>
+        <div class="mc-name">Extra Trees</div>
+      </div>
+      <div class="model-card" onclick="selectModel(this)">
+        <div class="mc-tag">Boosting</div>
+        <div class="mc-name">Gradient Boost</div>
+      </div>
+      <div class="model-card" onclick="selectModel(this)">
+        <div class="mc-tag">Linear</div>
+        <div class="mc-name">Logistic Reg.</div>
+      </div>
+      <div class="model-card" onclick="selectModel(this)">
+        <div class="mc-tag">Instance</div>
+        <div class="mc-name">KNN</div>
+      </div>
+      <div class="model-card" onclick="selectModel(this)">
+        <div class="mc-tag">Kernel</div>
+        <div class="mc-name">SVM</div>
+      </div>
+      <div class="model-card" onclick="selectModel(this)">
+        <div class="mc-tag">Deep Learning</div>
+        <div class="mc-name">Transformer</div>
+      </div>
+    </div>
+
+    <!-- ═══ Performance Summary Panel (added by Parinitha, issue #26) ═══ -->
+    <div class="divider"></div>
+
+    <div class="sec-eyebrow">— model performance summary</div>
+
+    <div class="perf-panel" id="perfPanel">
+      <div class="perf-panel-head">
+        <div class="perf-panel-title">
+          <span class="perf-panel-title-dot"></span>
+          Test-set performance for selected model
+        </div>
+        <div class="perf-panel-active-model" id="perfActiveModel">SVM</div>
+      </div>
+
+      <div class="perf-metrics-grid">
+        <div class="perf-metric">
+          <div class="perf-metric-label">Recall</div>
+          <div class="perf-metric-value" id="perfRecall">83.39<span class="unit">%</span></div>
+        </div>
+        <div class="perf-metric">
+          <div class="perf-metric-label">Precision</div>
+          <div class="perf-metric-value" id="perfPrecision">98.93<span class="unit">%</span></div>
+        </div>
+        <div class="perf-metric">
+          <div class="perf-metric-label">F1-Score</div>
+          <div class="perf-metric-value" id="perfF1">90.50<span class="unit">%</span></div>
+        </div>
+      </div>
+
+      <div class="perf-panel-foot">
+        <span class="perf-panel-foot-dot"></span>
+        Evaluated on SKAB held-out test set · valve2 · 4,196 windows
+      </div>
+    </div>
+    <!-- ═══ End performance summary panel ═══ -->
+
+    <div class="divider"></div>
+
+    <!-- Step 3: Run -->
+    <div class="sec-eyebrow">— step 3 · run prediction</div>
+    <button class="run-btn" id="runBtn" disabled>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+      Run prediction
+    </button>
+  </section>
+
+  <!-- Sample CSV aside -->
+  <section class="sample-aside">
+    <div class="aside-h">Expected file format</div>
+    <p class="aside-sub">Your CSV must match the SKAB schema exactly — one timestamp column followed by 26 numeric sensor columns and a label column.</p>
+    <div class="code-block">datetime,sensor_00,sensor_01,...,sensor_25,label
+2020-01-01 00:00:00,0.412,0.398,...,0.541,0
+2020-01-01 00:00:01,0.419,0.401,...,0.538,0
+2020-01-01 00:00:02,0.445,0.388,...,0.612,1</div>
+    <button class="dl-btn">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14"/></svg>
+      Download sample CSV
+    </button>
+  </section>
+
+  <div class="foot">
+    <span>CITS5206 capstone · Group 14 · UWA 2026</span>
+    <span>Client: Peter Whittaker</span>
+  </div>
+
+</div><!-- /uploadPage -->
+
+</div><!-- /page -->
+
+<script>
+// ── Page navigation ──
+function showUpload() {
+  document.getElementById('landing').classList.add('hidden');
+  document.getElementById('uploadPage').classList.add('active');
+  window.scrollTo(0, 0);
+}
+function showLanding() {
+  document.getElementById('landing').classList.remove('hidden');
+  document.getElementById('uploadPage').classList.remove('active');
+  window.scrollTo(0, 0);
+}
+
+// ── File handling ──
+const dz = document.getElementById('dropZone');
+
+function handleFile(input) {
+  const file = input.files[0];
+  if (!file) return;
+  document.getElementById('fileName').textContent = file.name;
+  document.getElementById('fileSize').textContent = (file.size / 1024).toFixed(1) + ' KB';
+  document.getElementById('filePreview').classList.add('visible');
+  document.getElementById('validationOk').classList.add('visible');
+  document.getElementById('runBtn').disabled = false;
+  dz.classList.add('file-loaded');
+}
+
+function clearFile() {
+  document.getElementById('fileInput').value = '';
+  document.getElementById('filePreview').classList.remove('visible');
+  document.getElementById('validationOk').classList.remove('visible');
+  document.getElementById('runBtn').disabled = true;
+  dz.classList.remove('file-loaded');
+}
+
+// ── Model selection ──
+function selectModel(card) {
+  document.querySelectorAll('.model-card').forEach(c => c.classList.remove('selected'));
+  card.classList.add('selected');
+}
+
+// ── Drag-and-drop ──
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag-over'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
+dz.addEventListener('drop', e => {
+  e.preventDefault();
+  dz.classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file && file.name.endsWith('.csv')) {
+    const dt = new DataTransfer();
+    dt.items.add(file);
+    const fileInput = document.getElementById('fileInput');
+    fileInput.files = dt.files;
+    handleFile(fileInput);
+  }
+});
+</script>
+
+<!-- Performance Summary component script (added by Parinitha, issue #26) -->
+<script src="components/performance_summary/performance_summary.js"></script>
+
+</body>
+</html>
