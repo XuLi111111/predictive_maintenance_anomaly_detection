@@ -505,6 +505,28 @@ body {
   transition: background .15s; display: inline-flex; align-items: center; gap: 6px;
 }
 .dl-btn:hover { background: var(--c-surface); }
+
+/* ── Tooltips ── */
+.has-tooltip { position: relative; }
+.has-tooltip::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--c-black);
+  color: var(--c-white);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .15s;
+}
+.has-tooltip:hover::after { opacity: 1; }
+
 </style>
 </head>
 <body>
@@ -525,7 +547,7 @@ body {
       <a href="#">Docs</a>
     </div>
     <button class="theme-toggle" onclick="toggleTheme()" id="themeBtn" title="Toggle dark/light mode">☀️</button>
-    <button class="nav-cta" onclick="showUpload()">Get started</button>
+    <button class="nav-cta has-tooltip" data-tooltip="Upload your sensor data" onclick="showUpload()">Get started</button>
   </nav>
 
   <section class="hero">
@@ -533,7 +555,7 @@ body {
     <h1 class="headline">Catch pump failures <em>30 minutes</em> before they happen.</h1>
     <p class="hero-sub">A drop-in early-warning layer for industrial centrifugal pumps. Upload sensor data, run pre-trained anomaly models, and know exactly when to intervene — no data science team required.</p>
     <div class="cta-row">
-      <button class="cta-p" onclick="showUpload()">Try it with your data →</button>
+      <button class="cta-p has-tooltip" data-tooltip="Upload a CSV and run anomaly detection" onclick="showUpload()">Try it with your data →</button>
       <button class="cta-s">See it in action</button>
     </div>
     <div class="mockup-wrap">
@@ -729,7 +751,7 @@ body {
 
     <!-- Step 3: Run -->
     <div class="sec-eyebrow">— step 3 · run prediction</div>
-    <button class="run-btn" id="runBtn" disabled>
+    <button class="run-btn has-tooltip" data-tooltip="Upload a CSV file first to enable" id="runBtn" disabled>
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
       Run prediction
     </button>
@@ -743,7 +765,7 @@ body {
 2020-01-01 00:00:00,0.412,0.398,...,0.541,0
 2020-01-01 00:00:01,0.419,0.401,...,0.538,0
 2020-01-01 00:00:02,0.445,0.388,...,0.612,1</div>
-    <button class="dl-btn">
+    <button class="dl-btn has-tooltip" data-tooltip="Download a sample SKAB-format CSV">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14"/></svg>
       Download sample CSV
     </button>
