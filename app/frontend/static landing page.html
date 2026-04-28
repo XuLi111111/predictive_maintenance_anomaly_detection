@@ -506,6 +506,32 @@ body {
 }
 .dl-btn:hover { background: var(--c-surface); }
 
+/* ── Loading spinner ── */
+.spinner-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  z-index: 999;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 1rem;
+}
+.spinner-overlay.active { display: flex; }
+.spinner {
+  width: 40px; height: 40px;
+  border: 3px solid rgba(255,255,255,0.2);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.spinner-msg {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px; color: #ffffff;
+  letter-spacing: 0.04em;
+}
 /* ── Results page ── */
 .results-page { display: none; }
 .results-page.active { display: block; }
@@ -587,6 +613,12 @@ body {
 </div>
 
 <div class="page">
+
+  <!-- ── Loading spinner overlay ── -->
+<div class="spinner-overlay" id="spinnerOverlay">
+  <div class="spinner"></div>
+  <div class="spinner-msg" id="spinnerMsg">Processing file…</div>
+</div>
 
 <!-- ═══ LANDING PAGE ═══ -->
 <div class="landing-page" id="landing">
@@ -1046,6 +1078,14 @@ body {
 
 <script>
 
+// ── Loading spinner ──
+function showSpinner(msg) {
+  document.getElementById('spinnerMsg').textContent = msg || 'Processing file…';
+  document.getElementById('spinnerOverlay').classList.add('active');
+}
+function hideSpinner() {
+  document.getElementById('spinnerOverlay').classList.remove('active');
+}
 // ── PDF download ──
 function downloadPDF() {
   const btn = document.getElementById('pdfBtn');
@@ -1135,6 +1175,11 @@ function handleFile(input) {
   document.getElementById('fileSize').textContent = (file.size / 1024).toFixed(1) + ' KB';
   document.getElementById('filePreview').classList.add('visible');
   document.getElementById('validationOk').classList.add('visible');
+  document.getElementById('runBtn').disabled = false;
+  document.getElementById('runBtn').onclick = function() {
+    showSpinner('Running anomaly detection…');
+    setTimeout(() => { hideSpinner(); }, 2000);
+  };
   document.getElementById('runBtn').onclick = function() { showResults(); };;
   dz.classList.add('file-loaded');
 }
