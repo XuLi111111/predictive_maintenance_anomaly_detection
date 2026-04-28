@@ -506,6 +506,21 @@ body {
 }
 .dl-btn:hover { background: var(--c-surface); }
 
+/* ── Upload success message ── */
+.upload-success {
+  display: none;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #15803d;
+  background: #f0fdf4;
+  padding: 10px 14px;
+  border-radius: var(--r-md);
+  border: 0.5px solid #bbf7d0;
+  margin-bottom: 1rem;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
+.upload-success.visible { display: flex; }
 /* ── Loading spinner ── */
 .spinner-overlay {
   display: none;
@@ -764,6 +779,11 @@ body {
       <div class="drop-hint">CSV · SKAB FORMAT · 26 SENSOR CHANNELS · UTF-8</div>
     </div>
 
+    <!-- Upload success message -->
+    <div class="upload-success" id="uploadSuccess">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#15803d" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+        File uploaded successfully — ready to run prediction.
+    </div>
     <!-- File preview -->
     <div class="file-preview" id="filePreview">
       <div class="fp-icon">
@@ -1175,6 +1195,7 @@ function handleFile(input) {
   document.getElementById('fileSize').textContent = (file.size / 1024).toFixed(1) + ' KB';
   document.getElementById('filePreview').classList.add('visible');
   document.getElementById('validationOk').classList.add('visible');
+  document.getElementById('uploadSuccess').classList.add('visible');
   document.getElementById('runBtn').disabled = false;
   document.getElementById('runBtn').onclick = function() {
     showSpinner('Running anomaly detection…');
@@ -1188,6 +1209,7 @@ function clearFile() {
   document.getElementById('fileInput').value = '';
   document.getElementById('filePreview').classList.remove('visible');
   document.getElementById('validationOk').classList.remove('visible');
+  document.getElementById('uploadSuccess').classList.remove('visible');
   document.getElementById('runBtn').disabled = true;
   dz.classList.remove('file-loaded');
 }
