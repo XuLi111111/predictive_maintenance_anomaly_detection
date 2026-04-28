@@ -1,0 +1,64 @@
+<!--
+  
+
+  This panel sits at the top of the results page and gives users
+  a quick snapshot of what the model found. Instead of making them
+  stare at the probability chart to figure out if anything went wrong,
+  this panel tells them instantly:
+    - how many fault windows were detected
+    - how serious it is (green / amber / red)
+    - when the first fault showed up
+
+  The data-severity attribute on the wrapper drives the colour coding.
+  fault_overview.js sets this dynamically based on the fault ratio.
+-->
+
+<div class="divider"></div>
+
+<div class="sec-eyebrow">— prediction overview</div>
+
+<div class="fault-overview" id="faultOverview" data-severity="amber">
+
+  <!-- top row: status pill on the left, first fault time on the right -->
+  <div class="fault-overview-head">
+
+    <div class="fault-status-pill" id="faultStatusPill">
+      <span class="fault-status-dot"></span>
+      <span class="fault-status-text">Anomalies detected</span>
+    </div>
+
+    <div class="fault-first-time" id="faultFirstTime">
+      First detected at <strong>00:14:33</strong>
+    </div>
+
+  </div>
+
+  <!-- the big number - impossible to miss -->
+  <div class="fault-headline">
+
+    <div class="fault-count" id="faultCount">12</div>
+
+    <div class="fault-count-context">
+      <div class="fault-count-label">fault windows detected</div>
+      <div class="fault-count-sub" id="faultCountSub">
+        out of 120 total windows analysed
+      </div>
+    </div>
+
+  </div>
+
+  <!-- density bar showing what % of windows were flagged as faults -->
+  <div class="fault-density">
+
+    <div class="fault-density-track">
+      <div class="fault-density-fill" id="faultDensityFill" style="width: 10%;"></div>
+    </div>
+
+    <div class="fault-density-meta">
+      <span class="fault-density-label">Fault density</span>
+      <span class="fault-density-value" id="faultDensityValue">10.0%</span>
+    </div>
+
+  </div>
+
+</div>
