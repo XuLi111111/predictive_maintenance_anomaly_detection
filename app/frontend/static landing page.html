@@ -506,6 +506,57 @@ body {
 }
 .dl-btn:hover { background: var(--c-surface); }
 
+/* ── Results page ── */
+.results-page { display: none; }
+.results-page.active { display: block; }
+
+.result-card {
+  border: 0.5px solid var(--c-border);
+  border-radius: var(--r-lg);
+  padding: 1.25rem;
+  background: var(--c-bg);
+  margin-bottom: 10px;
+}
+.result-card-head {
+  display: flex; align-items: center;
+  justify-content: space-between; margin-bottom: 12px;
+}
+
+/* ── Comparison grid ── */
+.comparison-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0,1fr));
+  gap: 10px;
+  margin-bottom: 1.25rem;
+}
+.comp-card {
+  border: 0.5px solid var(--c-border);
+  border-radius: var(--r-md);
+  padding: 0.875rem;
+  background: var(--c-bg);
+}
+.comp-card-head {
+  display: flex; align-items: center;
+  justify-content: space-between; margin-bottom: 8px;
+}
+.comp-model-name { font-size: 12px; font-weight: 500; }
+.comp-badge {
+  font-family: 'JetBrains Mono', monospace; font-size: 9px;
+  padding: 2px 8px; border-radius: var(--r-pill);
+  background: var(--c-surface); color: var(--c-muted);
+  border: 0.5px solid var(--c-border);
+}
+.comp-badge--best {
+  background: var(--c-blue-bg); color: var(--c-blue);
+  border-color: var(--c-blue);
+}
+.comp-metrics {
+  display: flex; gap: 8px; flex-wrap: wrap;
+  margin-top: 8px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px; color: var(--c-muted);
+}
+.comp-metrics strong { color: var(--c-text); }
 /* ── Tooltips ── */
 .has-tooltip { position: relative; }
 .has-tooltip::after {
@@ -530,6 +581,10 @@ body {
 </style>
 </head>
 <body>
+
+<div style="position:fixed;bottom:20px;right:20px;z-index:999;">
+  <button onclick="showResults()" style="background:#1d4ed8;color:white;padding:8px 14px;border:none;border-radius:8px;cursor:pointer;font-size:12px;">Preview Results →</button>
+</div>
 
 <div class="page">
 
@@ -778,9 +833,216 @@ body {
 
 </div><!-- /uploadPage -->
 
+<!-- ═══ RESULTS PAGE ═══ -->
+<div class="results-page" id="resultsPage">
+
+  <nav class="nav">
+    <div class="brand">
+      <div class="brand-mark"></div>
+      <div class="brand-name">pump.detect <span>/ v1.0</span></div>
+    </div>
+    <div class="nav-mid">
+      <a href="#" onclick="showLanding();return false;">← Back to home</a>
+      <a href="#" onclick="showUpload();return false;">New prediction</a>
+    </div>
+    <button class="nav-cta has-tooltip" data-tooltip="Start a new prediction run" onclick="showUpload()">Upload</button>
+  </nav>
+
+  <section class="upload-section">
+    <div class="breadcrumb">
+      <span class="breadcrumb-link" onclick="showLanding()">Home</span>
+      <span class="sep">/</span>
+      <span class="breadcrumb-link" onclick="showUpload()">New prediction</span>
+      <span class="sep">/</span>
+      <span class="current">Results</span>
+    </div>
+    <h2 class="upload-h">Prediction results</h2>
+    <p class="upload-sub">Anomaly detection complete — pump_03.csv · XGBoost · 4,196 time windows analysed.</p>
+
+    <div class="sec-eyebrow">— anomaly probability over time</div>
+
+    <div class="result-card">
+      <div class="result-card-head">
+        <div>
+          <div class="mock-title">Prediction output — pump_03.csv</div>
+          <div style="font-size:12px;color:var(--c-muted);margin-top:2px;">Active model: XGBoost</div>
+        </div>
+        <div class="mock-badge"><span class="mock-badge-dot"></span>Anomaly detected · 18 min lead</div>
+      </div>
+      <svg viewBox="0 0 700 120" style="width:100%;height:120px;display:block;">
+        <rect width="700" height="120" fill="var(--c-surface)"/>
+        <rect x="440" y="0" width="160" height="120" fill="var(--c-amber-bg)" opacity="0.9"/>
+        <line x1="440" y1="0" x2="440" y2="120" stroke="var(--c-amber)" stroke-width="1" stroke-dasharray="2,3"/>
+        <polyline points="0,95 40,92 80,96 120,93 160,90 200,94 240,91 280,95 320,91 360,94 400,88 440,72 480,48 520,28 560,16 600,22 640,38 680,58 700,72"
+          fill="none" stroke="var(--c-blue)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+        <circle cx="560" cy="16" r="5" fill="var(--c-amber)"/>
+        <circle cx="560" cy="16" r="10" fill="none" stroke="var(--c-amber)" stroke-width="1" opacity="0.5"/>
+      </svg>
+      <div class="mock-stats" style="margin-top:12px;">
+        <div class="mock-stat"><div class="mock-stat-k">Confidence</div><div class="mock-stat-v">94.2%</div></div>
+        <div class="mock-stat"><div class="mock-stat-k">Lead time</div><div class="mock-stat-v">18 min</div></div>
+        <div class="mock-stat"><div class="mock-stat-k">Fault windows</div><div class="mock-stat-v">312</div></div>
+        <div class="mock-stat"><div class="mock-stat-k">Total windows</div><div class="mock-stat-v">4,196</div></div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Model Comparison Dashboard -->
+    <div class="sec-eyebrow">— model comparison dashboard</div>
+    <h3 class="sec-h" style="font-size:18px;margin-bottom:0.4rem;">All models · side by side</h3>
+    <p class="sec-sub" style="margin-bottom:1.25rem;">Anomaly probability curves from all 7 trained models. Shaded region indicates detected fault window.</p>
+
+    <div class="comparison-grid">
+
+      <div class="comp-card">
+        <div class="comp-card-head">
+          <div class="comp-model-name">XGBoost</div>
+          <div class="comp-badge comp-badge--best">Best F1</div>
+        </div>
+        <svg viewBox="0 0 300 70" style="width:100%;height:70px;display:block;">
+          <rect width="300" height="70" fill="var(--c-surface)"/>
+          <rect x="188" y="0" width="70" height="70" fill="var(--c-amber-bg)" opacity="0.8"/>
+          <polyline points="0,55 17,53 34,56 51,53 68,52 85,54 102,52 119,55 136,52 153,54 170,50 188,40 205,26 222,14 239,8 256,12 273,22 290,34 300,42"
+            fill="none" stroke="var(--c-blue)" stroke-width="1.5" stroke-linejoin="round"/>
+        </svg>
+        <div class="comp-metrics">
+          <span>F1 <strong>0.8945</strong></span>
+          <span>Recall <strong>0.8242</strong></span>
+          <span>Precision <strong>0.9778</strong></span>
+        </div>
+      </div>
+
+      <div class="comp-card">
+        <div class="comp-card-head">
+          <div class="comp-model-name">AdaBoost</div>
+          <div class="comp-badge">Boosting</div>
+        </div>
+        <svg viewBox="0 0 300 70" style="width:100%;height:70px;display:block;">
+          <rect width="300" height="70" fill="var(--c-surface)"/>
+          <rect x="188" y="0" width="70" height="70" fill="var(--c-amber-bg)" opacity="0.8"/>
+          <polyline points="0,55 17,54 34,56 51,54 68,53 85,55 102,53 119,56 136,53 153,55 170,51 188,42 205,30 222,18 239,10 256,14 273,24 290,36 300,44"
+            fill="none" stroke="#7c3aed" stroke-width="1.5" stroke-linejoin="round"/>
+        </svg>
+        <div class="comp-metrics">
+          <span>F1 <strong>0.8819</strong></span>
+          <span>Recall <strong>0.7888</strong></span>
+          <span>Precision <strong>1.0000</strong></span>
+        </div>
+      </div>
+
+      <div class="comp-card">
+        <div class="comp-card-head">
+          <div class="comp-model-name">Gradient Boosting</div>
+          <div class="comp-badge">Boosting</div>
+        </div>
+        <svg viewBox="0 0 300 70" style="width:100%;height:70px;display:block;">
+          <rect width="300" height="70" fill="var(--c-surface)"/>
+          <rect x="188" y="0" width="70" height="70" fill="var(--c-amber-bg)" opacity="0.8"/>
+          <polyline points="0,56 17,54 34,57 51,54 68,53 85,55 102,53 119,56 136,53 153,55 170,51 188,43 205,31 222,20 239,12 256,16 273,26 290,38 300,46"
+            fill="none" stroke="#059669" stroke-width="1.5" stroke-linejoin="round"/>
+        </svg>
+        <div class="comp-metrics">
+          <span>F1 <strong>0.8805</strong></span>
+          <span>Recall <strong>0.8564</strong></span>
+          <span>Precision <strong>0.9060</strong></span>
+        </div>
+      </div>
+
+      <div class="comp-card">
+        <div class="comp-card-head">
+          <div class="comp-model-name">LightGBM</div>
+          <div class="comp-badge">Boosting</div>
+        </div>
+        <svg viewBox="0 0 300 70" style="width:100%;height:70px;display:block;">
+          <rect width="300" height="70" fill="var(--c-surface)"/>
+          <rect x="188" y="0" width="70" height="70" fill="var(--c-amber-bg)" opacity="0.8"/>
+          <polyline points="0,55 17,53 34,56 51,53 68,52 85,54 102,52 119,55 136,52 153,54 170,50 188,41 205,28 222,16 239,9 256,13 273,23 290,35 300,43"
+            fill="none" stroke="#d97706" stroke-width="1.5" stroke-linejoin="round"/>
+        </svg>
+        <div class="comp-metrics">
+          <span>F1 <strong>0.8796</strong></span>
+          <span>Recall <strong>0.8094</strong></span>
+          <span>Precision <strong>0.9632</strong></span>
+        </div>
+      </div>
+
+      <div class="comp-card">
+        <div class="comp-card-head">
+          <div class="comp-model-name">SVM</div>
+          <div class="comp-badge">Baseline</div>
+        </div>
+        <svg viewBox="0 0 300 70" style="width:100%;height:70px;display:block;">
+          <rect width="300" height="70" fill="var(--c-surface)"/>
+          <rect x="188" y="0" width="70" height="70" fill="var(--c-amber-bg)" opacity="0.8"/>
+          <polyline points="0,56 17,54 34,57 51,54 68,53 85,55 102,53 119,56 136,53 153,55 170,52 188,44 205,33 222,22 239,14 256,18 273,28 290,40 300,48"
+            fill="none" stroke="#dc2626" stroke-width="1.5" stroke-linejoin="round"/>
+        </svg>
+        <div class="comp-metrics">
+          <span>F1 <strong>0.9050</strong></span>
+          <span>Recall <strong>0.8339</strong></span>
+          <span>Precision <strong>0.9893</strong></span>
+        </div>
+      </div>
+
+      <div class="comp-card">
+        <div class="comp-card-head">
+          <div class="comp-model-name">Logistic Regression</div>
+          <div class="comp-badge">Baseline</div>
+        </div>
+        <svg viewBox="0 0 300 70" style="width:100%;height:70px;display:block;">
+          <rect width="300" height="70" fill="var(--c-surface)"/>
+          <rect x="188" y="0" width="70" height="70" fill="var(--c-amber-bg)" opacity="0.8"/>
+          <polyline points="0,56 17,54 34,57 51,55 68,53 85,55 102,54 119,56 136,54 153,55 170,52 188,45 205,35 222,24 239,16 256,20 273,30 290,42 300,50"
+            fill="none" stroke="#0891b2" stroke-width="1.5" stroke-linejoin="round"/>
+        </svg>
+        <div class="comp-metrics">
+          <span>F1 <strong>0.8744</strong></span>
+          <span>Recall <strong>0.7798</strong></span>
+          <span>Precision <strong>0.9951</strong></span>
+        </div>
+      </div>
+
+      <div class="comp-card">
+        <div class="comp-card-head">
+          <div class="comp-model-name">KNN</div>
+          <div class="comp-badge">Baseline</div>
+        </div>
+        <svg viewBox="0 0 300 70" style="width:100%;height:70px;display:block;">
+          <rect width="300" height="70" fill="var(--c-surface)"/>
+          <rect x="188" y="0" width="70" height="70" fill="var(--c-amber-bg)" opacity="0.8"/>
+          <polyline points="0,57 17,55 34,58 51,55 68,54 85,56 102,54 119,57 136,54 153,56 170,53 188,46 205,38 222,30 239,24 256,28 273,36 290,46 300,52"
+            fill="none" stroke="#be185d" stroke-width="1.5" stroke-linejoin="round"/>
+        </svg>
+        <div class="comp-metrics">
+          <span>F1 <strong>0.6932</strong></span>
+          <span>Recall <strong>0.5441</strong></span>
+          <span>Precision <strong>0.9548</strong></span>
+        </div>
+      </div>
+
+    </div>
+
+  </section>
+
+  <div class="foot">
+    <span>CITS5206 capstone · Group 14 · UWA 2026</span>
+    <span>Client: Peter Whittaker</span>
+  </div>
+
+</div><!-- /resultsPage -->
+
 </div><!-- /page -->
 
 <script>
+
+  // ── Results page navigation ──
+function showResults() {
+  document.getElementById('landing').classList.add('hidden');
+  document.getElementById('uploadPage').classList.remove('active');
+  document.getElementById('resultsPage').classList.add('active');
+  window.scrollTo(0, 0);
+}
 
 // ── Theme toggle ──
 function toggleTheme() {
@@ -809,6 +1071,7 @@ function showUpload() {
 function showLanding() {
   document.getElementById('landing').classList.remove('hidden');
   document.getElementById('uploadPage').classList.remove('active');
+  document.getElementById('resultsPage').classList.remove('active');
   window.scrollTo(0, 0);
 }
 
@@ -822,7 +1085,7 @@ function handleFile(input) {
   document.getElementById('fileSize').textContent = (file.size / 1024).toFixed(1) + ' KB';
   document.getElementById('filePreview').classList.add('visible');
   document.getElementById('validationOk').classList.add('visible');
-  document.getElementById('runBtn').disabled = false;
+  document.getElementById('runBtn').onclick = function() { showResults(); };;
   dz.classList.add('file-loaded');
 }
 
