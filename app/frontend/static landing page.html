@@ -6,6 +6,10 @@
 <title>pump.detect — Pump Anomaly Early Warning System</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;700&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<!-- Performance Summary component styles (added by Parinitha, issue #26) -->
+<link rel="stylesheet" href="components/performance_summary/performance_summary.css">
+
 <style>
 /* ── Reset ── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -634,6 +638,8 @@ body {
 </head>
 <body>
 
+<div class="page">
+
 <div style="position:fixed;bottom:20px;right:20px;z-index:999;">
   <button onclick="showResults()" style="background:#1d4ed8;color:white;padding:8px 14px;border:none;border-radius:8px;cursor:pointer;font-size:12px;">Preview Results →</button>
 </div>
@@ -659,6 +665,7 @@ body {
       <a href="#">How it works</a>
       <a href="#">Docs</a>
     </div>
+    <button class="nav-cta" onclick="showUpload()">Get started</button>
     <button class="theme-toggle" onclick="toggleTheme()" id="themeBtn" title="Toggle dark/light mode">☀️</button>
     <button class="nav-cta has-tooltip" data-tooltip="Upload your sensor data" onclick="showUpload()">Get started</button>
   </nav>
@@ -668,6 +675,7 @@ body {
     <h1 class="headline">Catch pump failures <em>30 minutes</em> before they happen.</h1>
     <p class="hero-sub">A drop-in early-warning layer for industrial centrifugal pumps. Upload sensor data, run pre-trained anomaly models, and know exactly when to intervene — no data science team required.</p>
     <div class="cta-row">
+      <button class="cta-p" onclick="showUpload()">Try it with your data →</button>
       <button class="cta-p has-tooltip" data-tooltip="Upload a CSV and run anomaly detection" onclick="showUpload()">Try it with your data →</button>
       <button class="cta-s">See it in action</button>
     </div>
@@ -869,10 +877,51 @@ body {
       </div>
     </div>
 
+    <!-- ═══ Performance Summary Panel (added by Parinitha, issue #26) ═══ -->
+    <div class="divider"></div>
+
+    <div class="sec-eyebrow">— model performance summary</div>
+
+    <div class="perf-panel" id="perfPanel">
+      <div class="perf-panel-head">
+        <div class="perf-panel-title">
+          <span class="perf-panel-title-dot"></span>
+          Test-set performance for selected model
+        </div>
+        <div class="perf-panel-active-model" id="perfActiveModel">SVM</div>
+      </div>
+
+      <div class="perf-metrics-grid">
+        <div class="perf-metric">
+          <div class="perf-metric-label">Recall</div>
+          <div class="perf-metric-value" id="perfRecall">83.39<span class="unit">%</span></div>
+        </div>
+        <div class="perf-metric">
+          <div class="perf-metric-label">Precision</div>
+          <div class="perf-metric-value" id="perfPrecision">98.93<span class="unit">%</span></div>
+        </div>
+        <div class="perf-metric">
+          <div class="perf-metric-label">F1-Score</div>
+          <div class="perf-metric-value" id="perfF1">90.50<span class="unit">%</span></div>
+        </div>
+      </div>
+
+      <div class="perf-panel-foot">
+        <span class="perf-panel-foot-dot"></span>
+        Evaluated on SKAB held-out test set · valve2 · 4,196 windows
+      </div>
+    </div>
+    <!-- ═══ End performance summary panel ═══ -->
+
     <div class="divider"></div>
 
     <!-- Step 3: Run -->
     <div class="sec-eyebrow">— step 3 · run prediction</div>
+    <button class="run-btn" id="runBtn" disabled>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+      Run prediction
+    </button>
+  </section>
     <button class="run-btn has-tooltip" data-tooltip="Upload a CSV file first to enable" id="runBtn" disabled>
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
       Run prediction
@@ -897,6 +946,7 @@ body {
 2020-01-01 00:00:00,0.412,0.398,...,0.541,0
 2020-01-01 00:00:01,0.419,0.401,...,0.538,0
 2020-01-01 00:00:02,0.445,0.388,...,0.612,1</div>
+    <button class="dl-btn">
     <button class="dl-btn has-tooltip" data-tooltip="Download a sample SKAB-format CSV">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14"/></svg>
       Download sample CSV
@@ -910,6 +960,9 @@ body {
 
 </div><!-- /uploadPage -->
 
+</div><!-- /page -->
+
+<script>
 <!-- ═══ RESULTS PAGE ═══ -->
 <div class="results-page" id="resultsPage">
 
@@ -1231,6 +1284,7 @@ function handleFile(input) {
   document.getElementById('fileSize').textContent = (file.size / 1024).toFixed(1) + ' KB';
   document.getElementById('filePreview').classList.add('visible');
   document.getElementById('validationOk').classList.add('visible');
+  document.getElementById('runBtn').disabled = false;
   document.getElementById('uploadSuccess').classList.add('visible');
   document.getElementById('runBtn').disabled = false;
   document.getElementById('runBtn').onclick = function() {
@@ -1273,5 +1327,9 @@ dz.addEventListener('drop', e => {
   }
 });
 </script>
+
+<!-- Performance Summary component script (added by Parinitha, issue #26) -->
+<script src="components/performance_summary/performance_summary.js"></script>
+
 </body>
 </html>
