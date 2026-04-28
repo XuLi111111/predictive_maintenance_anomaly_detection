@@ -30,6 +30,25 @@
   --r-pill:        100px;
 }
 
+/* ── Dark theme ── */
+[data-theme="dark"] {
+  --c-bg:         #1a1a1a;
+  --c-surface:    #242424;
+  --c-border:     rgba(255,255,255,0.1);
+  --c-border-med: rgba(255,255,255,0.2);
+  --c-text:       #f0f0f0;
+  --c-muted:      #9ca3af;
+  --c-hint:       #6b7280;
+  --c-black:      #f0f0f0;
+  --c-white:      #1a1a1a;
+  --c-blue-bg:    #1e2a4a;
+  --c-amber-bg:   #2a1f0a;
+}
+
+[data-theme="dark"] body {
+  background: #111111;
+}
+
 body {
   font-family: 'Plus Jakarta Sans', sans-serif;
   background: #f4f4f3;
@@ -83,6 +102,18 @@ body {
   border: none; cursor: pointer; transition: opacity .15s;
 }
 .nav-cta:hover { opacity: 0.82; }
+
+/* ── Theme toggle ── */
+.theme-toggle {
+  background: none;
+  border: 0.5px solid var(--c-border-med);
+  border-radius: var(--r-md);
+  padding: 6px 10px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background .15s;
+}
+.theme-toggle:hover { background: var(--c-surface); }
 
 /* ── Hero ── */
 .hero {
@@ -493,6 +524,7 @@ body {
       <a href="#">How it works</a>
       <a href="#">Docs</a>
     </div>
+    <button class="theme-toggle" onclick="toggleTheme()" id="themeBtn" title="Toggle dark/light mode">☀️</button>
     <button class="nav-cta" onclick="showUpload()">Get started</button>
   </nav>
 
@@ -596,6 +628,7 @@ body {
       <a href="#" onclick="showLanding();return false;">← Back to home</a>
       <a href="#">Docs</a>
     </div>
+    <button class="theme-toggle" onclick="toggleTheme()" id="themeBtnUpload" title="Toggle dark/light mode">☀️</button>
     <button class="nav-cta" onclick="showUpload()">Upload</button>
   </nav>
 
@@ -726,6 +759,25 @@ body {
 </div><!-- /page -->
 
 <script>
+
+// ── Theme toggle ──
+function toggleTheme() {
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  document.documentElement.setAttribute('data-theme', isDark ? 'light' : 'dark');
+  document.getElementById('themeBtn').textContent = isDark ? '☀️' : '🌙';
+  localStorage.setItem('theme', isDark ? 'light' : 'dark');
+}
+
+// Apply saved theme on load
+(function() {
+  const saved = localStorage.getItem('theme');
+  if (saved) {
+    document.documentElement.setAttribute('data-theme', saved);
+    const btn = document.getElementById('themeBtn');
+    if (btn) btn.textContent = saved === 'dark' ? '🌙' : '☀️';
+  }
+})();
+
 // ── Page navigation ──
 function showUpload() {
   document.getElementById('landing').classList.add('hidden');
