@@ -1,0 +1,55 @@
+<!--
+  
+
+  This is a small card that sits on the upload page underneath the
+  model selector. It shows the test-set scores (recall, precision, F1)
+  for whichever classical ML model the user just clicked on.
+
+  The whole point is so a non-technical person can see at a glance
+  how trustworthy the model is before they bother running a prediction.
+
+  
+-->
+
+<div class="divider"></div>
+
+<div class="sec-eyebrow">— model performance summary</div>
+
+<div class="perf-panel" id="perfPanel">
+
+  <!-- top row: title on the left, current model badge on the right -->
+  <div class="perf-panel-head">
+    <div class="perf-panel-title">
+      <span class="perf-panel-title-dot"></span>
+      Test-set performance for selected model
+    </div>
+    <div class="perf-panel-active-model" id="perfActiveModel">SVM</div>
+  </div>
+
+  <!-- the three metric tiles - JS swaps these values out per model -->
+  <div class="perf-metrics-grid">
+
+    <div class="perf-metric">
+      <div class="perf-metric-label">Recall</div>
+      <div class="perf-metric-value" id="perfRecall">83.39<span class="unit">%</span></div>
+    </div>
+
+    <div class="perf-metric">
+      <div class="perf-metric-label">Precision</div>
+      <div class="perf-metric-value" id="perfPrecision">98.93<span class="unit">%</span></div>
+    </div>
+
+    <div class="perf-metric">
+      <div class="perf-metric-label">F1-Score</div>
+      <div class="perf-metric-value" id="perfF1">90.50<span class="unit">%</span></div>
+    </div>
+
+  </div>
+
+  <!-- small footer line so the user knows where these numbers come from -->
+  <div class="perf-panel-foot">
+    <span class="perf-panel-foot-dot"></span>
+    Evaluated on SKAB held-out test set · valve2 · 4,196 windows
+  </div>
+
+</div>

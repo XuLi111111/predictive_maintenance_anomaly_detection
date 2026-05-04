@@ -1,0 +1,21 @@
+services:
+  api:
+    build: ./backend
+    container_name: pump-detect-api
+    environment:
+      ARTIFACT_DIR: /app/artifacts
+      ALERT_THRESHOLD: "0.5"
+      WINDOW_SIZE: "20"
+      HORIZON: "10"
+    volumes:
+      - ./backend/artifacts:/app/artifacts:ro
+    expose:
+      - "8000"
+
+  web:
+    build: ./frontend
+    container_name: pump-detect-web
+    depends_on:
+      - api
+    ports:
+      - "8080:80"

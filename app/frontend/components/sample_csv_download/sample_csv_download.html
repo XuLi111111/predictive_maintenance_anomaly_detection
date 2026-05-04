@@ -1,0 +1,57 @@
+<!--
+  
+
+  Why this matters: the upload page already shows the column names as
+  pills, but seeing them in a real file with actual sensor values is
+  much more helpful for someone who has never worked with SKAB data.
+
+  The card has:
+    - a short explanation of what the file contains
+    - a preview of the first couple of rows so users can see the format
+    - a download button that triggers the file save
+
+  Three files make up this component:
+    - sample_csv_download.html  → this file (the markup)
+    - sample_csv_download.css   → styling
+    - sample_csv_download.js    → download button logic
+    - sample_skab_format.csv    → the actual file users download
+-->
+
+<section class="sample-download-card">
+
+  <!-- header row: title + format badge -->
+  <div class="sdc-head">
+    <div class="sdc-title">Download sample data file</div>
+    <div class="sdc-badge">SKAB FORMAT</div>
+  </div>
+
+  <!-- one-line explanation -->
+  <p class="sdc-sub">
+    Not sure how to format your CSV? Download this example file — it uses
+    real valve sensor readings from the SKAB dataset so you can see exactly
+    what columns and values are expected.
+  </p>
+
+  <!-- mini preview of the file so users can see the format before downloading -->
+  <div class="sdc-preview">
+    <div class="sdc-preview-label">Preview — first 3 rows</div>
+    <div class="sdc-code">datetime;Accelerometer1RMS;...;anomaly
+2020-03-09 10:14:33;0.02658;...;0.0
+2020-03-09 10:14:34;0.02616;...;0.0</div>
+  </div>
+
+  <!-- file info row + download button -->
+  <div class="sdc-footer">
+    <div class="sdc-file-info">
+      <div class="sdc-file-name">sample_skab_format.csv</div>
+      <div class="sdc-file-meta">10 rows · 11 columns · semicolon-delimited · UTF-8</div>
+    </div>
+    <button class="sdc-dl-btn" id="sdcDownloadBtn" onclick="downloadSampleCSV()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14"/>
+      </svg>
+      Download
+    </button>
+  </div>
+
+</section>
