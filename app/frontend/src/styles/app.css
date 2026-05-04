@@ -1,0 +1,518 @@
+/* Base + Landing page styles — ported from the static prototype.
+   Upload/Results screens will add their own scoped styles in a follow-up. */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: "Plus Jakarta Sans", sans-serif;
+  background: #f4f4f3;
+  color: var(--c-text);
+  min-height: 100vh;
+  padding: 24px;
+  letter-spacing: -0.005em;
+}
+
+.page {
+  max-width: 780px;
+  margin: 0 auto;
+}
+
+/* ── Nav ── */
+.nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1.25rem;
+  border: 0.5px solid var(--c-border);
+  border-radius: var(--r-lg);
+  margin-bottom: 10px;
+  background: var(--c-bg);
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.brand-mark {
+  width: 22px;
+  height: 22px;
+  background: var(--c-black);
+  border-radius: 6px;
+  position: relative;
+}
+.brand-mark::after {
+  content: "";
+  position: absolute;
+  inset: 4px;
+  border: 1.5px solid var(--c-white);
+  border-radius: 3px;
+  border-top: none;
+  border-right: none;
+}
+.brand-name {
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+}
+.brand-name span {
+  color: var(--c-hint);
+  font-weight: 400;
+}
+.nav-mid {
+  display: flex;
+  gap: 1.25rem;
+  font-size: 12px;
+  color: var(--c-muted);
+}
+.nav-mid a {
+  text-decoration: none;
+  color: inherit;
+  transition: color 0.15s;
+}
+.nav-mid a:hover {
+  color: var(--c-text);
+}
+.nav-cta {
+  font-family: "Plus Jakarta Sans", sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 7px 14px;
+  border-radius: var(--r-md);
+  background: var(--c-black);
+  color: var(--c-white);
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.nav-cta:hover {
+  opacity: 0.82;
+}
+.theme-toggle {
+  background: none;
+  border: 0.5px solid var(--c-border-med);
+  border-radius: var(--r-md);
+  padding: 6px 10px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.15s;
+}
+.theme-toggle:hover {
+  background: var(--c-surface);
+}
+
+/* ── Hero ── */
+.hero {
+  border: 0.5px solid var(--c-border);
+  border-radius: var(--r-lg);
+  padding: 2.5rem 1.75rem 0;
+  background: var(--c-bg);
+  margin-bottom: 10px;
+  overflow: hidden;
+}
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--c-blue);
+  background: var(--c-blue-bg);
+  padding: 5px 12px;
+  border-radius: var(--r-pill);
+  margin-bottom: 1.25rem;
+  letter-spacing: 0.02em;
+}
+.eyebrow-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--c-blue);
+}
+.headline {
+  font-weight: 700;
+  font-size: 44px;
+  line-height: 1.02;
+  letter-spacing: -0.035em;
+  margin-bottom: 1rem;
+  max-width: 560px;
+}
+.headline em {
+  font-family: "Instrument Serif", serif;
+  font-style: italic;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  color: var(--c-blue);
+}
+.hero-sub {
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--c-muted);
+  max-width: 500px;
+  margin-bottom: 1.5rem;
+}
+.cta-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+}
+.cta-p {
+  font-size: 13px;
+  font-weight: 500;
+  padding: 11px 22px;
+  border-radius: var(--r-pill);
+  background: var(--c-black);
+  color: var(--c-white);
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.15s;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  text-decoration: none;
+}
+.cta-p:hover {
+  opacity: 0.82;
+}
+.cta-s {
+  font-size: 13px;
+  font-weight: 500;
+  padding: 11px 20px;
+  border-radius: var(--r-pill);
+  background: transparent;
+  color: var(--c-text);
+  border: 0.5px solid var(--c-border-med);
+  cursor: pointer;
+  transition: background 0.15s;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+}
+.cta-s:hover {
+  background: var(--c-surface);
+}
+
+/* ── Hero mockup ── */
+.mockup-wrap {
+  border: 0.5px solid var(--c-border);
+  border-radius: 12px 12px 0 0;
+  border-bottom: none;
+  background: var(--c-surface);
+  padding: 12px;
+  margin: 0 -0.25rem;
+}
+.mockup-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.m-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--c-border-med);
+}
+.mockup-url {
+  margin-left: 12px;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 10px;
+  color: var(--c-hint);
+  background: var(--c-bg);
+  padding: 3px 10px;
+  border-radius: 4px;
+  border: 0.5px solid var(--c-border);
+}
+.mockup-body {
+  background: var(--c-bg);
+  border-radius: 6px;
+  border: 0.5px solid var(--c-border);
+  padding: 14px;
+}
+.mock-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.mock-title {
+  font-size: 12px;
+  font-weight: 500;
+}
+.mock-badge {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 9px;
+  color: var(--c-amber);
+  background: var(--c-amber-bg);
+  padding: 3px 8px;
+  border-radius: var(--r-pill);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.mock-badge-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--c-amber);
+}
+.mock-chart {
+  width: 100%;
+  height: 90px;
+  display: block;
+}
+.mock-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-top: 10px;
+}
+.mock-stat {
+  background: var(--c-surface);
+  border-radius: 6px;
+  padding: 8px 10px;
+}
+.mock-stat-k {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 8px;
+  color: var(--c-hint);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  margin-bottom: 2px;
+}
+.mock-stat-v {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+/* ── Partners ── */
+.partners {
+  border: 0.5px solid var(--c-border);
+  border-radius: var(--r-lg);
+  padding: 1.25rem 1.5rem;
+  background: var(--c-bg);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  flex-wrap: wrap;
+}
+.partners-label {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 10px;
+  color: var(--c-hint);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+.logo-strip {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  flex: 1;
+  flex-wrap: wrap;
+}
+.pm-wordmark {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--c-text);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.pm-dot {
+  width: 14px;
+  height: 14px;
+  background: var(--c-text);
+  border-radius: 50%;
+}
+.uwa-block {
+  border-left: 0.5px solid var(--c-border-med);
+  padding-left: 1.25rem;
+}
+.uwa-wordmark {
+  font-family: "Instrument Serif", serif;
+  font-size: 18px;
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  color: var(--c-text);
+  display: block;
+}
+.uwa-sub {
+  font-size: 9px;
+  color: var(--c-hint);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  display: block;
+  margin-top: -2px;
+}
+
+/* ── Benefits ── */
+.benefits {
+  border: 0.5px solid var(--c-border);
+  border-radius: var(--r-lg);
+  padding: 2rem 1.5rem;
+  background: var(--c-bg);
+  margin-bottom: 10px;
+}
+.sec-eyebrow {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 10px;
+  color: var(--c-hint);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 0.75rem;
+}
+.sec-h {
+  font-weight: 700;
+  font-size: 26px;
+  line-height: 1.15;
+  letter-spacing: -0.025em;
+  margin-bottom: 0.5rem;
+  max-width: 480px;
+}
+.sec-h em {
+  font-family: "Instrument Serif", serif;
+  font-style: italic;
+  font-weight: 400;
+  color: var(--c-blue);
+}
+.sec-sub {
+  font-size: 14px;
+  color: var(--c-muted);
+  line-height: 1.55;
+  margin-bottom: 1.75rem;
+  max-width: 460px;
+}
+.ben-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+.ben {
+  background: var(--c-surface);
+  border-radius: var(--r-md);
+  padding: 1.25rem 1rem;
+}
+.ben-n {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 10px;
+  color: var(--c-hint);
+  margin-bottom: 1.5rem;
+  letter-spacing: 0.05em;
+}
+.ben-stat {
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  margin-bottom: 6px;
+}
+.ben-stat .unit {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--c-muted);
+  margin-left: 2px;
+}
+.ben-label {
+  font-size: 12px;
+  color: var(--c-muted);
+  line-height: 1.5;
+}
+
+/* ── Final CTA ── */
+.final {
+  border: 0.5px solid var(--c-border);
+  border-radius: var(--r-lg);
+  padding: 2.25rem 1.75rem;
+  background: var(--c-surface);
+  margin-bottom: 10px;
+  text-align: center;
+}
+.final-h {
+  font-weight: 700;
+  font-size: 28px;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+  margin-bottom: 0.5rem;
+}
+.final-h em {
+  font-family: "Instrument Serif", serif;
+  font-style: italic;
+  font-weight: 400;
+  color: var(--c-blue);
+}
+.final-sub {
+  font-size: 14px;
+  color: var(--c-muted);
+  margin: 0 auto 1.5rem;
+  max-width: 400px;
+  line-height: 1.55;
+}
+.final-ctas {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+/* ── Footer ── */
+.foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1.25rem;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 10px;
+  color: var(--c-hint);
+  letter-spacing: 0.04em;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* ── Tooltip (shared) ── */
+.has-tooltip {
+  position: relative;
+}
+.has-tooltip::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--c-black);
+  color: var(--c-white);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 10px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s;
+}
+.has-tooltip:hover::after {
+  opacity: 1;
+}
+
+/* ── Stub page (Upload / Results placeholders) ── */
+.stub {
+  border: 0.5px solid var(--c-border);
+  border-radius: var(--r-lg);
+  padding: 3rem 2rem;
+  background: var(--c-bg);
+  margin-bottom: 10px;
+  text-align: center;
+  color: var(--c-muted);
+  font-size: 14px;
+}
