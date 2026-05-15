@@ -1,4 +1,5 @@
 import os
+import tempfile
 from pathlib import Path
 
 
@@ -11,7 +12,12 @@ class Settings:
             str(Path(__file__).resolve().parents[2] / "artifacts"),
         )
     )
-    upload_tmp_dir: Path = Path(os.getenv("UPLOAD_TMP_DIR", "/tmp/pump_detect_uploads"))
+    upload_tmp_dir: Path = Path(
+        os.getenv(
+            "UPLOAD_TMP_DIR",
+            str(Path(tempfile.gettempdir()) / "pump_detect_uploads"),
+        )
+    )
     max_upload_mb: int = int(os.getenv("MAX_UPLOAD_MB", "50"))
 
     # FR-10: must match training-time configuration
