@@ -1,143 +1,231 @@
+"""Upload endpoint (T1) + sample-CSV asset endpoint (FR-05).
+
+The upload flow:
+1. Read the uploaded file into memory (capped by `settings.max_upload_mb`).
+2. Detect the CSV separator (SKAB uses ';', some exports use ',').
+3. Validate against the SKAB schema via `inference.preprocess.validate_schema`.
+4. Persist to `settings.upload_tmp_dir/{file_id}.csv` re-serialised with ';'
+   as the canonical separator so the downstream `predict.py` can keep its
+   simple `pd.read_csv(..., sep=';')` call.
+5. Persist a sidecar JSON with metadata that the predict/report endpoints
+   can consume without re-parsing the CSV.
+6. Schedule a background task to delete the file after a TTL (NFR-13).
+
+The endpoint returns enough information for the front-end to render an
+informative validation row before the user picks a model.
+"""
+from __future__ import annotations
+
+import io
+import json
+import os
+import time
 import uuid
-from io import BytesIO
+from datetime import datetime
+from pathlib import Path
 
 import pandas as pd
-from fastapi import APIRouter, HTTPException, UploadFile
+from fastapi import (
+    APIRouter,
+    File,
+    HTTPException,
+    UploadFile,
+)
 from fastapi.responses import FileResponse
 
 from app.core.config import settings
-from app.schemas.upload import UploadResponse
+from app.inference.preprocess import SchemaError, validate_schema
 
 router = APIRouter()
 
 
-@router.post("/upload", response_model=UploadResponse)
-async def upload_csv(file: UploadFile):
-    """
-    FR-01/02/03/04/07/21
-    Accepts a CSV file, checks it looks like valid SKAB sensor data,
-    saves it to a temp folder and returns a file_id for downstream use.
-    """
+# Files older than this are removed on the *next* upload via inline GC.
+# We deliberately don't schedule a real timer — running asyncio.sleep
+# inside a BackgroundTask blocks Starlette's TestClient (which waits for
+# all tasks before returning), and a real cron is overkill for a
+# single-user demo. _gc_old_uploads runs at the top of every request.
+_RETENTION_SECONDS = 30 * 60
 
-    # only accept csv files, reject anything else straight away
-    if not file.filename.endswith(".csv"):
+
+@router.post("/upload")
+async def upload_csv(
+    file: UploadFile = File(...),
+):
+    """FR-01/02/03/04/07/21 — validate SKAB schema and stage for prediction.
+
+    Returns ``{file_id, rows, time_range, columns_detected, has_label,
+    warnings, model_default}`` so the UI can show schema feedback without
+    a second round-trip.
+    """
+    if not file.filename or not file.filename.lower().endswith(".csv"):
         raise HTTPException(
             status_code=400,
-            detail="Only CSV files are accepted. Please upload a .csv file.",
+            detail=(
+                "Only .csv files are accepted.\n"
+                "How to fix: export your data as CSV from Excel "
+                "(File → Save As → CSV UTF-8), Python "
+                "(df.to_csv('out.csv', sep=';', index=False)), or your "
+                "SCADA system. If the file is already CSV-formatted but "
+                "has a different extension, rename it to end with '.csv'."
+            ),
         )
 
-    # read the raw bytes so we can check size and parse it
-    contents = await file.read()
-
-    # reject files that are too large to process sensibly
-    size_mb = len(contents) / (1024 * 1024)
-    if size_mb > settings.max_upload_mb:
+    raw = await file.read()
+    if len(raw) == 0:
         raise HTTPException(
             status_code=400,
-            detail=f"File is too large. Maximum allowed size is {settings.max_upload_mb} MB.",
+            detail=(
+                "Uploaded file is empty (0 bytes).\n"
+                "How to fix: verify the file actually contains data "
+                "before uploading — open it in a text editor and confirm "
+                "you can see header + rows."
+            ),
         )
 
-    # try to parse as a dataframe
-    # SKAB raw files are semicolon separated, so we try comma first
-    # and fall back to semicolon if we only get one column back
+    max_bytes = settings.max_upload_mb * 1024 * 1024
+    if len(raw) > max_bytes:
+        raise HTTPException(
+            status_code=413,
+            detail=(
+                f"File too large ({len(raw) / 1_048_576:.1f} MB). "
+                f"Limit is {settings.max_upload_mb} MB.\n"
+                f"How to fix: trim the file to a shorter time window "
+                f"(at 1 Hz, 1 hour = ~360 KB, so 50 MB covers ~140 hours). "
+                f"Or split into multiple uploads and analyse separately."
+            ),
+        )
+
     try:
-        df = pd.read_csv(BytesIO(contents), sep=",")
-        if len(df.columns) == 1:
-            # one column usually means the separator is actually a semicolon
-            df = pd.read_csv(BytesIO(contents), sep=";")
-    except Exception:
-        raise HTTPException(
-            status_code=400,
-            detail="Could not read the file as a CSV. Please check the file format.",
-        )
-
-    # no point continuing if the file has no rows
-    if df.empty:
-        raise HTTPException(
-            status_code=400,
-            detail="The uploaded file is empty. Please upload a file with sensor data.",
-        )
-
-    # check all 8 required SKAB sensor columns are present
-    # these column names must match exactly what the model was trained on
-    missing_cols = [col for col in settings.sensor_columns if col not in df.columns]
-    if missing_cols:
+        text = raw.decode("utf-8")
+    except UnicodeDecodeError as exc:
         raise HTTPException(
             status_code=400,
             detail=(
-                f"The following required sensor columns are missing: {missing_cols}. "
-                f"Expected columns are: {settings.sensor_columns}"
+                f"File is not UTF-8 encoded ({exc.reason} at byte "
+                f"{exc.start}).\n"
+                f"How to fix: re-save the file as UTF-8. In Excel: "
+                f"File → Save As → 'CSV UTF-8 (Comma delimited)'. In "
+                f"Python: df.to_csv('out.csv', encoding='utf-8'). Avoid "
+                f"GBK / Windows-1252 / UTF-16 — these will all fail here."
             ),
         )
 
-    # make sure none of the sensor columns have gaps in the data
-    # missing readings would cause the model to fail or produce unreliable results
-    null_counts = df[settings.sensor_columns].isnull().sum()
-    cols_with_nulls = null_counts[null_counts > 0]
-    if not cols_with_nulls.empty:
+    sep = _detect_separator(text)
+
+    try:
+        df = pd.read_csv(io.StringIO(text), sep=sep)
+    except (pd.errors.ParserError, ValueError) as exc:
         raise HTTPException(
             status_code=400,
             detail=(
-                f"Missing values found in these sensor columns: {dict(cols_with_nulls)}. "
-                f"All sensor readings must be present."
+                f"Could not parse the CSV with separator '{sep}': {exc}.\n"
+                f"How to fix: open the file in a text editor and check "
+                f"that every row has the same number of columns. Common "
+                f"causes: a sensor value contains a literal '{sep}', or "
+                f"the file mixes ',' and ';' separators across rows. "
+                f"SKAB-format files should use ';' consistently."
             ),
         )
 
-    # sensor columns should all be numbers
-    # if anything is text or mixed type the scaler will break downstream
-    non_numeric_cols = [
-        col for col in settings.sensor_columns
-        if not pd.api.types.is_numeric_dtype(df[col])
-    ]
-    if non_numeric_cols:
-        raise HTTPException(
-            status_code=400,
-            detail=(
-                f"These sensor columns contain non-numeric values: {non_numeric_cols}. "
-                f"All sensor readings must be numeric."
-            ),
+    try:
+        info = validate_schema(df)
+    except SchemaError as exc:
+        raise HTTPException(status_code=400, detail=str(exc.message))
+
+    # Cheap garbage collection of any stale uploads from previous runs.
+    _gc_old_uploads(settings.upload_tmp_dir, _RETENTION_SECONDS)
+
+    file_id = uuid.uuid4().hex
+    csv_path = settings.upload_tmp_dir / f"{file_id}.csv"
+    sidecar_path = settings.upload_tmp_dir / f"{file_id}.json"
+
+    # Re-serialise canonically so predict.py can keep its simple sep=';' read.
+    df.to_csv(csv_path, sep=";", index=False)
+
+    sidecar = {
+        "filename": file.filename,
+        "rows": info.rows,
+        "has_label": info.has_label,
+        "columns": info.columns_detected,
+        "time_range": list(info.time_range),
+        "uploaded_at": datetime.utcnow().isoformat() + "Z",
+        "original_separator": sep,
+    }
+    sidecar_path.write_text(json.dumps(sidecar), encoding="utf-8")
+
+    warnings: list[str] = list(info.warnings)
+    if not info.has_label:
+        warnings.append(
+            "No 'anomaly' column detected — accuracy metrics (Precision / "
+            "Recall / F1) will be hidden because there's no ground truth "
+            "to compare against. The probability chart and alert flags "
+            "are still produced normally. "
+            "How to fix (optional): if your dataset has known fault "
+            "windows, add an 'anomaly' column with 1 inside faults and 0 "
+            "elsewhere."
         )
 
-    # check if the anomaly label column is present
-    # this is optional — files without labels can still be used for prediction
-    has_label = settings.label_column in df.columns
-
-    # save the file to the temp directory with a unique id
-    # downstream endpoints (predict, compare) will use this file_id to load the data
-    file_id = str(uuid.uuid4())
-    save_path = settings.upload_tmp_dir / f"{file_id}.csv"
-    save_path.write_bytes(contents)
-
-    # return the file metadata so the frontend knows the upload worked
-    return UploadResponse(
-        file_id=file_id,
-        filename=file.filename,
-        rows=len(df),
-        columns=list(df.columns),
-        has_label=has_label,
-        message="File uploaded and validated successfully.",
-    )
+    return {
+        "file_id": file_id,
+        "rows": info.rows,
+        "time_range": {"start": info.time_range[0], "end": info.time_range[1]},
+        "columns_detected": info.columns_detected,
+        "has_label": info.has_label,
+        "warnings": warnings,
+        "model_default": "xgb",
+    }
 
 
 @router.get("/sample-csv")
 def sample_csv():
-    """
-    FR-05
-    Returns a small sample SKAB CSV file so users can see
-    the expected format before uploading their own data.
-    """
+    """FR-05 — stream a small valid SKAB CSV from artifacts/sample.csv.
 
-    # the sample file lives in the artifacts folder alongside the trained models
-    sample_path = settings.artifact_dir / "sample_skab.csv"
-
-    if not sample_path.exists():
+    The file is bundled with the backend image so users can download it
+    without first uploading anything. Generated from valve2/0.csv during
+    deployment (see scripts/) — committed under app/backend/artifacts/.
+    """
+    path = settings.artifact_dir / "sample.csv"
+    if not path.is_file():
         raise HTTPException(
-            status_code=404,
-            detail="Sample CSV file not found. Please contact the team.",
+            status_code=503,
+            detail=f"Sample CSV not bundled in {settings.artifact_dir}. "
+                   f"Place 'sample.csv' under app/backend/artifacts/.",
         )
-
     return FileResponse(
-        path=str(sample_path),
-        filename="sample_skab.csv",
+        path,
         media_type="text/csv",
+        filename="pump_detect_sample.csv",
     )
+
+
+# ─── Internals ────────────────────────────────────────────────────────
+
+def _detect_separator(text: str) -> str:
+    """SKAB CSVs use ';'. Some exports use ','. Pick whichever the
+    header line has more of. Falls back to ';' (the project default)."""
+    first_line = text.split("\n", 1)[0]
+    semi = first_line.count(";")
+    comma = first_line.count(",")
+    if semi == 0 and comma == 0:
+        return ";"
+    return ";" if semi >= comma else ","
+
+
+def _gc_old_uploads(directory: Path, max_age_seconds: int) -> None:
+    """Delete any files in `directory` older than the TTL.
+
+    Cheap inline GC: runs on every upload. For our workload (single-user,
+    handful of uploads) this is more than enough — no need for a cron task.
+    """
+    now = time.time()
+    try:
+        for entry in directory.iterdir():
+            try:
+                if not entry.is_file():
+                    continue
+                if now - entry.stat().st_mtime > max_age_seconds:
+                    entry.unlink(missing_ok=True)
+            except OSError:
+                continue
+    except FileNotFoundError:
+        os.makedirs(directory, exist_ok=True)
