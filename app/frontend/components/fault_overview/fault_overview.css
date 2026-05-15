@@ -1,0 +1,208 @@
+
+/* outer wrapper */
+.fault-overview {
+  border: 0.5px solid var(--c-border);
+  border-left: 3px solid var(--c-amber);
+  border-radius: var(--r-md);
+  padding: 1.5rem 1.5rem 1.25rem;
+  background: var(--c-surface);
+  margin-bottom: 1.25rem;
+  transition: border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.fault-overview:hover {
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+}
+
+
+/* green = clean run, no faults found */
+.fault-overview[data-severity="green"] {
+  border-left-color: #15803d;
+}
+.fault-overview[data-severity="green"] .fault-status-pill {
+  color: #15803d;
+  background: #f0fdf4;
+}
+.fault-overview[data-severity="green"] .fault-status-dot {
+  background: #15803d;
+}
+.fault-overview[data-severity="green"] .fault-density-fill {
+  background: #15803d;
+}
+.fault-overview[data-severity="green"] .fault-count {
+  color: #15803d;
+}
+
+/* amber = some faults, worth investigating */
+.fault-overview[data-severity="amber"] {
+  border-left-color: var(--c-amber);
+}
+.fault-overview[data-severity="amber"] .fault-status-pill {
+  color: var(--c-amber);
+  background: var(--c-amber-bg);
+}
+.fault-overview[data-severity="amber"] .fault-status-dot {
+  background: var(--c-amber);
+}
+.fault-overview[data-severity="amber"] .fault-density-fill {
+  background: var(--c-amber);
+}
+.fault-overview[data-severity="amber"] .fault-count {
+  color: var(--c-amber);
+}
+
+/* red = high fault rate, urgent attention needed */
+.fault-overview[data-severity="red"] {
+  border-left-color: #dc2626;
+}
+.fault-overview[data-severity="red"] .fault-status-pill {
+  color: #dc2626;
+  background: #fef2f2;
+}
+.fault-overview[data-severity="red"] .fault-status-dot {
+  background: #dc2626;
+}
+.fault-overview[data-severity="red"] .fault-density-fill {
+  background: #dc2626;
+}
+.fault-overview[data-severity="red"] .fault-count {
+  color: #dc2626;
+}
+
+
+/* top row */
+.fault-overview-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.fault-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 500;
+  padding: 4px 12px;
+  border-radius: var(--r-pill);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  transition: all 0.25s ease;
+}
+
+/* the dot pulses when faults are present to draw attention */
+.fault-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  animation: fault-pulse 2s ease-in-out infinite;
+}
+
+@keyframes fault-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.5; transform: scale(1.3); }
+}
+
+/* no pulse needed when everything is fine */
+.fault-overview[data-severity="green"] .fault-status-dot {
+  animation: none;
+}
+
+.fault-first-time {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--c-muted);
+  letter-spacing: 0.02em;
+}
+
+.fault-first-time strong {
+  color: var(--c-text);
+  font-weight: 500;
+}
+
+
+/* big headline number */
+.fault-headline {
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.fault-count {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 56px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  transition: color 0.25s ease;
+}
+
+.fault-count-context {
+  flex: 1;
+}
+
+.fault-count-label {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--c-text);
+  margin-bottom: 2px;
+}
+
+.fault-count-sub {
+  font-size: 12px;
+  color: var(--c-muted);
+  line-height: 1.4;
+}
+
+
+/* density bar */
+.fault-density-track {
+  width: 100%;
+  height: 6px;
+  background: var(--c-border);
+  border-radius: var(--r-pill);
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+
+.fault-density-fill {
+  height: 100%;
+  border-radius: var(--r-pill);
+  transition: width 0.4s ease, background-color 0.25s ease;
+}
+
+.fault-density-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.05em;
+}
+
+.fault-density-label {
+  color: var(--c-hint);
+  text-transform: uppercase;
+}
+
+.fault-density-value {
+  color: var(--c-text);
+  font-weight: 500;
+}
+
+
+/* mobile - shrink the big number so it doesn't dominate */
+@media (max-width: 480px) {
+  .fault-count {
+    font-size: 44px;
+  }
+  .fault-overview {
+    padding: 1.25rem 1rem;
+  }
+}
