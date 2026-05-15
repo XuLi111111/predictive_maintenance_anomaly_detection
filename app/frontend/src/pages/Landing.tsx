@@ -55,13 +55,13 @@ export default function Landing() {
               viewBox="0 0 600 90"
               preserveAspectRatio="none"
             >
-              <rect width="600" height="90" fill="#f7f7f6" />
+              <rect width="600" height="90" style={{ fill: "var(--c-surface)" }} />
               <rect
                 x="380"
                 y="0"
                 width="130"
                 height="90"
-                fill="#fffbeb"
+                style={{ fill: "var(--c-amber-bg)" }}
                 opacity="0.9"
               />
               <line
@@ -69,25 +69,25 @@ export default function Landing() {
                 y1="0"
                 x2="380"
                 y2="90"
-                stroke="#b45309"
+                style={{ stroke: "var(--c-amber)" }}
                 strokeWidth="1"
                 strokeDasharray="2,3"
               />
               <polyline
                 points="0,70 30,68 60,71 90,69 120,66 150,70 180,67 210,71 240,68 270,66 300,70 330,65 360,58 380,45 400,32 420,22 440,14 460,10 480,15 500,22 520,30 540,42 560,55 580,65 600,68"
                 fill="none"
-                stroke="#1d4ed8"
+                style={{ stroke: "var(--c-blue)" }}
                 strokeWidth="2"
                 strokeLinejoin="round"
                 strokeLinecap="round"
               />
-              <circle cx="460" cy="10" r="4" fill="#b45309" />
+              <circle cx="460" cy="10" r="4" style={{ fill: "var(--c-amber)" }} />
               <circle
                 cx="460"
                 cy="10"
                 r="8"
                 fill="none"
-                stroke="#b45309"
+                style={{ stroke: "var(--c-amber)" }}
                 strokeWidth="1"
                 opacity="0.5"
               />
@@ -101,7 +101,7 @@ export default function Landing() {
                 <div className="mock-stat-k">Horizon</div>
                 <div className="mock-stat-v">
                   10
-                  <span style={{ fontSize: 11, fontWeight: 500, color: "#6b7280" }}>
+                  <span style={{ fontSize: 11, fontWeight: 500, color: "var(--c-muted)" }}>
                     {" "}
                     s
                   </span>
