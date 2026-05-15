@@ -1,11 +1,16 @@
 # Contributing — pump.detect Web App
 
-Welcome. This document tells you what to build, where to put it, and how to
-ship it without stepping on anyone's toes.
+Welcome. This document tells you where the code lives, what the current
+status of each module is, and how to run / extend the app without
+stepping on anyone's toes.
 
 This file covers **only the web application** under `app/`. The training
 pipeline (`src/`, `data/`, `models/`, `results/`) is governed by separate
 conventions in the top-level `README.md`.
+
+> **Status as of 2026-05-13 (demo day)**: every original task T1–T9 has
+> shipped, plus a second wave of UX / live-mode / report-quality work.
+> See section 4 for the up-to-date status of each module.
 
 ---
 
@@ -13,95 +18,88 @@ conventions in the top-level `README.md`.
 
 ```
 app/
-├── backend/                       FastAPI + inference layer
+├── backend/                          FastAPI + inference layer
 │   ├── app/
-│   │   ├── main.py                Entry point — DO NOT modify casually
-│   │   ├── core/config.py         Shared settings (sensor cols, threshold, paths)
-│   │   ├── api/routes/            ← your work goes here
-│   │   │   ├── upload.py          stub (501) — T1
-│   │   │   ├── models.py          done
-│   │   │   ├── predict.py         stub (501) — T2 / T3
-│   │   │   └── report.py          stub (501) — T4
+│   │   ├── main.py                   Entry point — registers routers + CORS
+│   │   ├── core/config.py            Shared settings (sensor cols, threshold, paths)
+│   │   ├── api/routes/
+│   │   │   ├── upload.py             POST /api/upload + GET /api/sample-csv
+│   │   │   ├── models.py             GET  /api/models
+│   │   │   ├── predict.py            POST /api/predict + /api/predict/compare
+│   │   │   ├── report.py             POST /api/report (5-page PDF)
+│   │   │   ├── stream.py             WS   /api/stream  (CSV replay)
+│   │   │   └── live.py               POST /api/live/ingest + /config,
+│   │   │                             GET  /api/live/status,
+│   │   │                             WS   /api/live/stream
 │   │   ├── inference/
-│   │   │   ├── registry.py        8 models metadata — done
-│   │   │   └── preprocess.py      ← schema validation + sliding window (T1)
-│   │   └── schemas/               Pydantic request/response models
-│   ├── artifacts/                 ← put .pkl / .pt files here (NOT in git)
-│   ├── .dockerignore
+│   │   │   ├── registry.py           8 models metadata
+│   │   │   ├── preprocess.py         Schema validation, NaN/range/sampling checks,
+│   │   │   │                         "How to fix" error messages, sliding window
+│   │   │   ├── loader.py             Per-process model + scaler caches
+│   │   │   ├── predict.py            prepare_input + run_model (shared)
+│   │   │   ├── state_machine.py      4-tier alert state (NORMAL/WATCH/WARNING/ALERT)
+│   │   │   ├── transformer_model.py  TransformerFusionLite definition
+│   │   │   └── live_buffer.py        In-memory ring buffer + pub/sub +
+│   │   │                             data-quality monitoring
+│   │   ├── reports/
+│   │   │   └── pdf.py                5-page report (Executive Summary, Detection
+│   │   │                             Detail, Model Comparison + Confusion + ROC/PR,
+│   │   │                             Sensor Deep-Dive, Methodology + Appendix)
+│   │   └── schemas/                  Pydantic request/response models
+│   ├── artifacts/                    Trained model files (NOT in git)
 │   ├── Dockerfile
 │   └── requirements.txt
 │
-├── frontend/                      React + Vite + TypeScript
+├── frontend/                         React + Vite + TypeScript
 │   ├── src/
 │   │   ├── pages/
-│   │   │   ├── Landing.tsx        done — reference implementation
-│   │   │   ├── Upload.tsx         ← stub, T5
-│   │   │   └── Results.tsx        ← stub, T6
-│   │   ├── components/            Nav, ThemeToggle, Footer (shared — don't break)
-│   │   ├── styles/                Design tokens + global CSS
-│   │   └── api/                   ← create client.ts here for backend calls
-│   ├── .dockerignore
+│   │   │   ├── Landing.tsx           "/" — hero + mockup + benefits
+│   │   │   ├── Upload.tsx            "/upload" — Steps 1-4 (inline live replay)
+│   │   │   ├── Results.tsx           "/results" — batch results + PDF download
+│   │   │   └── Live.tsx              "/live" — always-on monitor
+│   │   ├── components/
+│   │   │   ├── Nav.tsx               Tab nav (Home / Upload / Results / Live)
+│   │   │   ├── ThemeToggle.tsx       Light / dark toggle
+│   │   │   ├── Footer.tsx
+│   │   │   ├── LiveChart.tsx         Probability chart + Brush slider + sensor tooltip
+│   │   │   ├── StatusBanner.tsx      4-tier coloured banner
+│   │   │   ├── SpeedControl.tsx      0.5× / 1× / 10× / 100× + pause / stop
+│   │   │   ├── LiveControlBar.tsx    Status badge + model selector + threshold
+│   │   │   └── LiveStatusBadge.tsx   🔴 LIVE / WAITING / DISCONNECTED
+│   │   ├── hooks/
+│   │   │   └── useAlertAudio.ts      Shared audio chime + alert loop
+│   │   ├── api/
+│   │   │   ├── client.ts             REST helpers (upload, predict, report, models)
+│   │   │   ├── streamClient.ts       WS wrapper for CSV replay
+│   │   │   └── liveClient.ts         WS wrapper for live stream + config + quality
+│   │   └── styles/
+│   │       ├── tokens.css            Design tokens (light + dark themes)
+│   │       └── app.css               Global CSS
 │   ├── Dockerfile
 │   ├── nginx.conf
-│   ├── package.json
-│   └── package-lock.json
+│   └── package.json
+│
+├── scripts/
+│   └── pump_simulator.py             Local pump simulator (stdlib only)
 │
 ├── docker-compose.yml
 ├── README.md
-└── CONTRIBUTING.md                (this file)
+└── CONTRIBUTING.md                   (this file)
 ```
 
 ---
 
-## 2. Visual reference for Upload / Results pages (READ THIS BEFORE T5 / T6)
+## 2. Visual prototype reference (historical)
 
-The original interactive prototype — already approved by the client — is at
-the **repository root**:
+The original interactive prototype that the client approved is at the
+**repository root**: `/static landing page.html`. Each page in
+`src/pages/` was ported from there; visual decisions (colours, layout,
+fonts) descended from this file plus the **2026-05-12 design refresh**
+(violet primary, refreshed shadows, light/dark themes).
 
-```
-/static landing page.html
-```
-
-It is a single self-contained HTML file with three sections (`#landing`,
-`#uploadPage`, `#resultsPage`) and inline CSS / JS. To use it as a spec:
-
-1. Open it in a browser by double-clicking the file
-2. Click "Get started" to navigate to the upload screen
-3. Click "Preview Results →" (bottom-right debug button) to see the results screen
-4. Use these screens as the **visual + interaction reference** for T5 / T6
-
-### How to translate it to React (T5 / T6 workflow)
-
-`app/frontend/src/pages/Landing.tsx` is the **already-completed example** of
-how the same HTML pattern was ported. Open both files side by side and you
-will see the conversion is mostly mechanical:
-
-| Original HTML            | React/JSX equivalent              |
-|--------------------------|-----------------------------------|
-| `class="..."`            | `className="..."`                 |
-| `onclick="fn()"`         | `onClick={fn}`                    |
-| `<input ... onchange>`   | `<input ... onChange>`            |
-| inline `<style>` block   | already split into `tokens.css` + `app.css` |
-| `<script>` functions     | React hooks (`useState`, `useEffect`) |
-
-**Steps for T5 (Upload page):**
-1. Find `<div class="upload-page" id="uploadPage">` block in the HTML
-2. Translate the structure into JSX in `app/frontend/src/pages/Upload.tsx`
-3. Copy the relevant CSS rules (`.drop-zone`, `.model-card`, `.perf-panel`,
-   `.schema-row`, etc.) from the HTML's `<style>` block into
-   `app/frontend/src/styles/app.css`
-4. Convert the `<script>` functions (`handleFile`, `selectModel`,
-   `updatePerformancePanel`) to React hooks
-5. Replace mock behaviour with real API calls via `src/api/client.ts`
-
-**Steps for T6 (Results page):**
-1. Find `<div class="results-page" id="resultsPage">` block in the HTML
-2. Same translation process
-3. Replace the static SVG charts with [Recharts](https://recharts.org/)
-   `<LineChart>` + `<ReferenceArea>` for the alert band
-
-The hard work (design decisions, colours, layout, fonts, copywriting) is
-already done — you are doing structural translation, not new design.
+The Upload, Results, and Live pages have evolved well beyond the
+prototype — this file is kept only for traceability, not as a working
+spec.
 
 ---
 
@@ -136,34 +134,56 @@ docker compose up --build
 
 ---
 
-## 4. Task assignments
+## 4. Module status (as of demo day 2026-05-13)
 
-Pick one, claim it in the group chat (reply `T1` / `T2` / ...), then start.
+All original tasks T1–T9 are complete. The second post-T9 wave covers UX
+polish, live-mode hardening, and report depth — also done.
 
-| Task | Owner | Files | Acceptance criteria |
-|------|-------|-------|---------------------|
-| **T1** Upload API + schema validation | — | `app/backend/app/api/routes/upload.py`, `app/backend/app/inference/preprocess.py` | Reject malformed CSV with plain-language error (FR-02/03/04). Return `{file_id, rows, time_range, columns_detected, has_label, warnings}`. Implement `/api/sample-csv` (FR-05). |
-| **T2** Predict API (single model) | — | `app/backend/app/api/routes/predict.py` | Apply `scaler.pkl`, build (N,20,8) windows, return probs + anomaly windows + summary. Suppress `metrics` when `has_label=false` (FR-21). Threshold from `settings.alert_threshold` (FR-16). |
-| **T3** Compare API (8 models) | — | same file as T2 | Run all 8 models on the same input. Reuse T2's preprocessing — do not re-run scaler/windowing per model. (FR-19) |
-| **T4** PDF report | — | `app/backend/app/api/routes/report.py`, new `app/backend/app/reports/pdf.py` | ReportLab; include detected columns, preprocessing steps applied, embedded probability chart (matplotlib → PNG), and a plain-language explanation for non-technical readers (FR-17/18). |
-| **T5** Upload page UI | — | `app/frontend/src/pages/Upload.tsx`, new components under `app/frontend/src/components/`, new `app/frontend/src/api/client.ts` | Drop zone, schema validation feedback, model picker (8 cards), perf panel (live metrics for selected model), threshold slider, run button (FR-01/05/06/08/11). See section 2. |
-| **T6** Results page UI | — | `app/frontend/src/pages/Results.tsx` | Probability LineChart with shaded alert bands (Recharts `<ReferenceArea>`), 4-stat summary panel, 8-model comparison grid, PDF download button (FR-14/15/19/20). See section 2. |
-| **T7** Transformer artifact + loader | — | new `app/backend/app/inference/loader.py`, `app/backend/artifacts/model_transformer.pt` | Load PyTorch `.pt` in `eval()` mode, set `torch.manual_seed(42)` for NFR-05. Update transformer entry in `registry.py` with real metrics. Wire branching in `predict.py` based on `is_dl` flag. |
+### Backend
 
-### Dependency graph
+| Module | Status | Notes |
+|--------|--------|-------|
+| `upload.py` (T1) | ✅ done | Schema validation + 30-min TTL GC + "How to fix" errors. |
+| `models.py` | ✅ done | Static registry → 8 cards on frontend. |
+| `predict.py` (T2/T3) | ✅ done | `prepare_input` shared across endpoints; tree models on raw windows, linear / kernel on scaled, transformer on its own per-feature scaler. |
+| `report.py` (T4) | ✅ done | Reruns all 8 models so the PDF comparison page is real. |
+| `reports/pdf.py` | ✅ enhanced | 5-page report: Executive Summary (risk badge LOW/MEDIUM/HIGH + action sentence) · Detection Detail (chart + anomaly timeline + plain English) · Model Comparison (8-model table + agreement statement + confusion matrix + ROC/PR with best-F1 callout when labeled) · Sensor Deep-Dive (per-channel z-score + 8-panel sparklines) · Methodology + Appendix. |
+| `stream.py` (T8) | ✅ done | CSV-replay WS now also emits `sensors` in each tick for chart tooltip. |
+| `live.py` | ✅ new | Always-on real-time endpoint: POST ingest / POST config / GET status / WS stream. |
+| `inference/live_buffer.py` | ✅ new | Single ring buffer + pub/sub + data-quality monitoring (frozen / out-of-range / uneven cadence). |
+| `inference/preprocess.py` | ✅ enhanced | Sampling-rate check (median / std / gaps / duplicates), NaN check, all errors end with "How to fix" guidance. |
+| `inference/state_machine.py` | ✅ done | Four-tier 0.30 / 0.50 / 0.80 with hysteresis. |
+| `inference/transformer_model.py` (T7) | ✅ done | TransformerFusionLite F1 = 0.9244 on SKAB test set. |
 
-```
-T1 ──► T2 ──► T3
-       │
-       └────► T4
-       │
-       └────► T6 (frontend can mock first)
-T5 (independent of backend, can mock first)
-T7 (independent, but T2 must check is_dl flag)
-```
+### Frontend
 
-**Recommended kickoff order:** T1 + T2 + T5 in parallel (frontend mocks
-backend responses initially), then T3 / T6 / T4, finally T7.
+| Module | Status | Notes |
+|--------|--------|-------|
+| `pages/Landing.tsx` | ✅ done | SVG mockup colours use CSS vars (theme-safe). |
+| `pages/Upload.tsx` (T5) | ✅ enhanced | One-stop page: expected format at top → upload → model grid → threshold (with quick picks) → CTAs → **inline Step 4 live timeline** (was a separate `/monitor` route — now merged). |
+| `pages/Results.tsx` (T6) | ✅ done | Main probability chart + 4-stat summary + 8-model comparison + PDF download. |
+| `pages/Live.tsx` | ✅ new | Always-on monitoring with control bar (model dropdown + threshold slider + Pause/Clear), data-quality alerts banner, client-side stale-data watchdog. |
+| `components/LiveChart.tsx` | ✅ enhanced | Brush slider for scrolling history + custom tooltip with 8 sensor readings + colour-coded line. |
+| `components/LiveControlBar.tsx` | ✅ new | Status badge + model dropdown + threshold slider + Pause/Clear actions. |
+| `components/LiveStatusBadge.tsx` | ✅ new | 4-state pill (connecting / waiting / live / disconnected) with pulse on `live`. |
+| `hooks/useAlertAudio.ts` | ✅ new | Shared audio cue hook (chime + repeating alert loop). Used by both Upload inline replay and Live page. |
+| `api/client.ts` | ✅ done | REST helpers + `downloadReport()`. |
+| `api/streamClient.ts` | ✅ done | WS wrapper for `/api/stream` (CSV replay). |
+| `api/liveClient.ts` | ✅ new | WS wrapper for `/api/live/stream` + auto-reconnect + typed frames (`hello` / `tick` / `config` / `quality`). |
+| `styles/{tokens.css,app.css}` | ✅ refreshed | Violet primary, dark mode with violet-400, bolder shadow scale, full radius scale. |
+
+### Other
+
+| File | Status | Notes |
+|------|--------|-------|
+| `scripts/pump_simulator.py` | ✅ new | Realistic dynamics (jitter + bell-curve burst + random timing + `--seed`). Uses stdlib `urllib.request` — no extra pip deps. |
+| `docker-compose.yml` | ✅ done | api + web (nginx) services; web has `depends_on.condition: service_healthy`. |
+| `tests/` | ✅ 21 passing | Schema, state machine, stream (with `sensors` assertion), upload smoke. |
+
+### Known low-priority leftovers (post-demo)
+
+- Sensor unit sanity (e.g. °F vs °C). Requires a baseline-stats artifact.
+- `SRS PDF` says FR-21 priority `Should`; client confirmed implementation already meets `Must`.
 
 ---
 
@@ -216,7 +236,7 @@ git push -u origin feat/upload-api
 
 The 7 sklearn artifacts already exist in David's local copy at:
 ```
-data/processed/dataset2/skab_classical_models/
+data/processed/skab/skab_classical_models/
   scaler.pkl
   model_lr.pkl  model_rf.pkl  model_svm.pkl
   model_et.pkl  model_gb.pkl  model_knn.pkl  model_xgb.pkl
