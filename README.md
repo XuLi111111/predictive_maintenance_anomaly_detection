@@ -41,7 +41,7 @@ predictive_maintenance_anomaly_detection/
 │   │   ├── SKAB_DataQualityAudit_ForDLpipeline_ByXuLi.py
 │   │   └── SKAB_EDA_ByXuLi.py
 │   ├── classical_ml/
-│   │   └── SKAB_ClassicalML_Baseline_By_David.py      ← (2a) 7 sklearn models
+│   │   └── SKAB_ClassicalML_Baseline.py      ← (2a) 7 sklearn models
 │   └── deep_learning/
 │       └── SKAB_TransformerFusionLite_TrainingSearch_ByXuLi.py  ← (2b) transformer
 │
