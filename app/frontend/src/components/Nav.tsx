@@ -1,14 +1,13 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 
 import ThemeToggle from "./ThemeToggle";
 
 interface NavProps {
   /** Tab-layout per FR-06. Active tab is highlighted. */
-  active?: "home" | "upload" | "results";
+  active?: "home" | "upload" | "results" | "live";
 }
 
 export default function Nav({ active = "home" }: NavProps) {
-  const navigate = useNavigate();
   const tabStyle = (key: NavProps["active"]) => ({
     color: active === key ? "var(--c-text)" : "var(--c-muted)",
     fontWeight: active === key ? 500 : 400,
@@ -31,11 +30,12 @@ export default function Nav({ active = "home" }: NavProps) {
         <Link to="/results" style={tabStyle("results")}>
           Results
         </Link>
+        <Link to="/live" style={tabStyle("live")} className="nav-live-link">
+          <span className="nav-live-dot" />
+          Live
+        </Link>
       </div>
       <ThemeToggle />
-      <button className="nav-cta" onClick={() => navigate("/upload")}>
-        Get started
-      </button>
     </nav>
   );
 }

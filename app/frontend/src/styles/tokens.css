@@ -1,36 +1,119 @@
-/* Design tokens — ported 1:1 from page/static landing page.html */
+/* Design tokens — refreshed colour system (light + dark).
+   Goal: keep the engineer-minimal aesthetic, but warm the neutrals,
+   modernise the accent to indigo, lift dark-mode contrast, and add
+   shadow/radius scales so cards have consistent elevation. */
+
 :root {
-  --c-black: #0f0f0f;
+  /* Neutrals — warmer than pure greyscale so the UI feels less clinical */
+  --c-black: #0d0e10;
   --c-white: #ffffff;
-  --c-bg: #ffffff;
-  --c-surface: #f7f7f6;
-  --c-border: rgba(0, 0, 0, 0.12);
-  --c-border-med: rgba(0, 0, 0, 0.25);
-  --c-text: #0f0f0f;
-  --c-muted: #6b7280;
-  --c-hint: #9ca3af;
-  --c-blue: #1d4ed8;
-  --c-blue-bg: #eff6ff;
+  --c-bg-page: #f4f4f2;            /* body background */
+  --c-bg: #ffffff;                 /* card background */
+  --c-surface: #f6f6f4;            /* inset surface (mockup, code, panels) */
+  --c-surface-2: #ecebe6;          /* secondary inset (slightly deeper) */
+  --c-border: rgba(13, 14, 16, 0.10);
+  --c-border-med: rgba(13, 14, 16, 0.22);
+
+  /* Text */
+  --c-text: #0d0e10;
+  --c-muted: #5b6472;
+  --c-hint: #8e96a3;
+
+  /* Accent — bold violet for a more distinctive brand */
+  --c-blue: #7c3aed;               /* violet-600 */
+  --c-blue-strong: #6d28d9;        /* violet-700, used on hover/active */
+  --c-blue-bg: #f3eafe;            /* violet-50/100 tinted */
+  --c-blue-ring: rgba(124, 58, 237, 0.18);
+
+  /* Amber — warning / secondary accent */
   --c-amber: #b45309;
-  --c-amber-bg: #fffbeb;
+  --c-amber-strong: #92400e;
+  --c-amber-bg: #fff8eb;
+  --c-amber-ring: rgba(180, 83, 9, 0.18);
+
+  /* Feedback colours — keep semantic mapping, theme-aware */
+  --c-success: #15803d;
+  --c-success-bg: #f0fdf4;
+  --c-success-border: #bbf7d0;
+  --c-danger: #dc2626;
+  --c-danger-bg: #fef2f2;
+  --c-danger-border: #fecaca;
+
+  /* Live Monitor — four-level alert state machine (T9) */
+  --c-status-normal:    #16a34a;
+  --c-status-normal-bg: #dcfce7;
+  --c-status-watch:     #ca8a04;
+  --c-status-watch-bg:  #fef9c3;
+  --c-status-warning:   #ea580c;
+  --c-status-warning-bg:#ffedd5;
+  --c-status-alert:     #dc2626;
+  --c-status-alert-bg:  #fee2e2;
+
+  /* Radius scale */
+  --r-sm: 6px;
   --r-md: 8px;
   --r-lg: 12px;
+  --r-xl: 16px;
   --r-pill: 100px;
+
+  /* Elevation — used on cards and on hover (bolder for stronger lift) */
+  --shadow-sm: 0 2px 6px rgba(13, 14, 16, 0.07),
+               0 1px 2px rgba(13, 14, 16, 0.05);
+  --shadow-md: 0 10px 28px rgba(13, 14, 16, 0.12),
+               0 3px 8px rgba(13, 14, 16, 0.07);
+  --shadow-lg: 0 28px 64px rgba(13, 14, 16, 0.18),
+               0 10px 24px rgba(13, 14, 16, 0.10);
 }
 
 [data-theme="dark"] {
-  --c-bg: #1a1a1a;
-  --c-surface: #242424;
-  --c-border: rgba(255, 255, 255, 0.1);
-  --c-border-med: rgba(255, 255, 255, 0.2);
-  --c-text: #f0f0f0;
-  --c-muted: #9ca3af;
+  /* Warmer-blue dark base — pure #111 reads as cheap; this feels intentional */
+  --c-black: #f3f4f6;              /* "ink" inverts to near-white on hover/CTA */
+  --c-white: #15161a;
+  --c-bg-page: #0b0c0f;
+  --c-bg: #16181d;
+  --c-surface: #1c1f25;
+  --c-surface-2: #23262d;
+  --c-border: rgba(255, 255, 255, 0.10);
+  --c-border-med: rgba(255, 255, 255, 0.22);
+
+  --c-text: #f3f4f6;
+  --c-muted: #a3aab8;
   --c-hint: #6b7280;
-  --c-black: #f0f0f0;
-  --c-white: #1a1a1a;
-  --c-blue-bg: #1e2a4a;
+
+  /* Violet — lift toward violet-400 so it reads cleanly on dark surfaces */
+  --c-blue: #a78bfa;               /* violet-400 */
+  --c-blue-strong: #c4b5fd;
+  --c-blue-bg: #281d4f;
+  --c-blue-ring: rgba(167, 139, 250, 0.28);
+
+  /* Amber — lift toward amber-400 in dark */
+  --c-amber: #fbbf24;
+  --c-amber-strong: #fcd34d;
   --c-amber-bg: #2a1f0a;
+  --c-amber-ring: rgba(251, 191, 36, 0.22);
+
+  --c-success: #4ade80;
+  --c-success-bg: #0d2a18;
+  --c-success-border: #14532d;
+  --c-danger: #f87171;
+  --c-danger-bg: #2a1010;
+  --c-danger-border: #7f1d1d;
+
+  /* Status — lift fg toward 300/400 ramp so it reads on dark bg */
+  --c-status-normal:    #4ade80;
+  --c-status-normal-bg: #0d2a18;
+  --c-status-watch:     #facc15;
+  --c-status-watch-bg:  #2a1f04;
+  --c-status-warning:   #fb923c;
+  --c-status-warning-bg:#2a1408;
+  --c-status-alert:     #f87171;
+  --c-status-alert-bg:  #2a0a0a;
+
+  --shadow-sm: 0 3px 10px rgba(0, 0, 0, 0.55),
+               0 1px 3px rgba(0, 0, 0, 0.40);
+  --shadow-md: 0 12px 32px rgba(0, 0, 0, 0.60),
+               0 4px 8px rgba(0, 0, 0, 0.40);
+  --shadow-lg: 0 32px 72px rgba(0, 0, 0, 0.70),
+               0 12px 28px rgba(0, 0, 0, 0.50);
 }
-[data-theme="dark"] body {
-  background: #111111;
-}
+
