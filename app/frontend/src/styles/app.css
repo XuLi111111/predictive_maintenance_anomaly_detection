@@ -516,6 +516,144 @@ body {
   color: var(--c-muted);
   font-size: 14px;
 }
+/* ── Results page ── */
+.results-main {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 2rem 1.25rem 4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.results-section {
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-lg);
+  padding: 1.5rem;
+}
+
+.results-section-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--c-text);
+  margin: 0 0 0.25rem;
+  letter-spacing: -0.01em;
+}
+
+.results-section-sub {
+  font-size: 12px;
+  color: var(--c-muted);
+  margin: 0 0 1.25rem;
+}
+
+.chart-wrap {
+  margin-top: 1rem;
+  border-radius: var(--r-md);
+  overflow: hidden;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.summary-stat {
+  background: var(--c-bg);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-md);
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.summary-label {
+  font-size: 11px;
+  color: var(--c-muted);
+  font-family: "JetBrains Mono", monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.summary-value {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--c-text);
+  letter-spacing: -0.02em;
+}
+
+.model-compare-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.model-compare-card {
+  background: var(--c-bg);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-md);
+  padding: 0.875rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  transition: border-color 0.15s;
+}
+
+.model-compare-card--active {
+  border-color: var(--c-blue);
+  background: var(--c-blue-bg);
+}
+
+.mcc-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--c-text);
+}
+
+.mcc-family {
+  font-size: 10px;
+  color: var(--c-muted);
+  font-family: "JetBrains Mono", monospace;
+  margin-bottom: 0.35rem;
+}
+
+.mcc-metrics {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.mcc-metric {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.mcc-metric-label {
+  font-size: 10px;
+  color: var(--c-muted);
+  font-family: "JetBrains Mono", monospace;
+}
+
+.mcc-metric-value {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--c-text);
+  font-family: "JetBrains Mono", monospace;
+}
+
+.results-actions {
+  display: flex;
+  justify-content: flex-start;
+}
+
+@media (max-width: 700px) {
+  .summary-grid { grid-template-columns: repeat(2, 1fr); }
+  .model-compare-grid { grid-template-columns: repeat(2, 1fr); }
 
 /* ── Upload page (T5) ── */
 .upload-section {
