@@ -1,4 +1,5 @@
-import os
+from pathlib import Path
+
 import numpy as np
 import joblib
 from sklearn.linear_model import LogisticRegression
@@ -11,13 +12,24 @@ from sklearn.neighbors import KNeighborsClassifier
 
 from xgboost import XGBClassifier
 
-MODEL_SAVE_DIR = "../data/processed/dataset2/skab_classical_models"
-os.makedirs(MODEL_SAVE_DIR, exist_ok=True)
+# Train inputs come from the preprocessing step; trained artifacts are
+# written directly into the web app's serving directory so a fresh
+# `docker compose up` picks them up with no manual copy.
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+DATA_PATH = PROJECT_ROOT / "data" / "processed" / "skab" / "skab_window20_horizon10.npz"
+MODEL_SAVE_DIR = PROJECT_ROOT / "app" / "backend" / "artifacts"
+MODEL_SAVE_DIR.mkdir(parents=True, exist_ok=True)
+
+if not DATA_PATH.is_file():
+    raise FileNotFoundError(
+        f"Processed dataset not found at {DATA_PATH}. "
+        f"Run src/data_preprocessing/Build_Dataset_SKAB_DLpipeline_By_David.py first."
+    )
 
 # =========================
 # Load dataset
 # =========================
-data = np.load("../data/processed/dataset2/skab_strategyA_window20_horizon10.npz")
+data = np.load(DATA_PATH)
 
 X_train = data["X_train"]
 y_train = data["y_train"]
@@ -49,8 +61,8 @@ X_train_scaled = scaler.fit_transform(X_train_flat)
 X_val_scaled = scaler.transform(X_val_flat)
 X_test_scaled = scaler.transform(X_test_flat)
 
-joblib.dump(scaler, os.path.join(MODEL_SAVE_DIR, "scaler.pkl"))
-print(f"Scaler saved to {MODEL_SAVE_DIR}/scaler.pkl")
+joblib.dump(scaler, MODEL_SAVE_DIR / "scaler.pkl")
+print(f"Scaler saved to {MODEL_SAVE_DIR / 'scaler.pkl'}")
 
 # =========================
 # Helper function
@@ -70,7 +82,7 @@ def evaluate_model(name, model, X_tr, X_te, save_name):
     print("\nClassification Report:")
     print(classification_report(y_test, y_pred, digits=4))
 
-    save_path = os.path.join(MODEL_SAVE_DIR, f"{save_name}.pkl")
+    save_path = MODEL_SAVE_DIR / f"{save_name}.pkl"
     joblib.dump(model, save_path)
     print(f"Model saved: {save_path}")
 
