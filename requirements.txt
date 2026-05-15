@@ -1,5 +1,24 @@
-numpy==1.26.4
-pandas==2.2.3
-scikit-learn==1.6.1
+# Training-pipeline dependencies.
+# Install with:  pip install -r requirements.txt
+#
+# These pin the libraries used by the three scripts under src/:
+#   data_preprocessing → numpy, pandas
+#   classical_ml       → scikit-learn, xgboost, joblib
+#   deep_learning      → torch (+ everything above)
+#
+# The web app has its own pinned set in app/backend/requirements.txt;
+# versions are intentionally compatible so training and inference can
+# share a single virtualenv if you prefer.
+
+numpy>=2.0,<3
+pandas==2.2.2
 scipy==1.13.1
+scikit-learn>=1.6,<2
 joblib==1.4.2
+xgboost==2.1.1
+matplotlib==3.9.2
+
+# CPU build is fine for the (≤2-layer, d_model≤64) transformer trained on
+# (batch, 20, 8) inputs. Use the CUDA wheel if you want GPU training:
+#   pip install torch==2.5.1 --index-url https://download.pytorch.org/whl/cu121
+torch==2.5.1

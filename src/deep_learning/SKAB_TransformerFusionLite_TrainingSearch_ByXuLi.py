@@ -1,13 +1,37 @@
-import random
 import copy
+import json
+import os
+import random
+import sys
+from pathlib import Path
+
+import joblib
 import numpy as np
 import torch
 import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader
 from sklearn.metrics import classification_report, confusion_matrix
 from sklearn.preprocessing import StandardScaler
-import os
-import json
+
+
+# =========================
+# Paths
+# =========================
+# Final inference-ready artifacts (model_transformer.pt, transformer_scaler.pkl,
+# transformer_threshold.json) land directly in the web app's serving directory.
+# Per-config sweep intermediates (.pth state dicts + JSON reports) go to
+# results/ for analysis.
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+DATA_PATH = PROJECT_ROOT / "data" / "processed" / "skab" / "skab_window20_horizon10.npz"
+RESULTS_DIR = PROJECT_ROOT / "results" / "skab" / "transformer"
+ARTIFACT_DIR = PROJECT_ROOT / "app" / "backend" / "artifacts"
+RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+ARTIFACT_DIR.mkdir(parents=True, exist_ok=True)
+
+# Use the inference-side TransformerFusionLiteModel as the single source of
+# truth so the saved .pt unpickles cleanly inside the FastAPI worker.
+sys.path.insert(0, str(PROJECT_ROOT / "app" / "backend"))
+from app.inference.transformer_model import TransformerFusionLiteModel  # noqa: E402
 
 
 # =========================
@@ -30,10 +54,13 @@ set_seed(42)
 # =========================
 # Load data
 # =========================
-data = np.load("../../data/processed/dataset2/skab_strategyA_window20_horizon10.npz")
+if not DATA_PATH.is_file():
+    raise FileNotFoundError(
+        f"Processed dataset not found at {DATA_PATH}. "
+        f"Run src/data_preprocessing/Build_Dataset_SKAB_DLpipeline_By_David.py first."
+    )
 
-RESULTS_DIR = "../../results/dataset2"
-os.makedirs(RESULTS_DIR, exist_ok=True)
+data = np.load(DATA_PATH)
 
 X_train = data["X_train"]
 y_train = data["y_train"]
@@ -90,6 +117,11 @@ X_train = scaler.fit_transform(X_train.reshape(-1, F)).reshape(B, T, F)
 X_val = scaler.transform(X_val.reshape(-1, F)).reshape(X_val.shape)
 X_test = scaler.transform(X_test.reshape(-1, F)).reshape(X_test.shape)
 
+# Persist the per-feature scaler immediately — the FastAPI worker reads it
+# from this exact path at inference time (loader.load_transformer_scaler()).
+joblib.dump(scaler, ARTIFACT_DIR / "transformer_scaler.pkl")
+print(f"Transformer scaler saved to: {ARTIFACT_DIR / 'transformer_scaler.pkl'}")
+
 
 # =========================
 # Dataset
@@ -120,93 +152,10 @@ test_loader = DataLoader(TimeSeriesDataset(X_test, y_test), batch_size=64)
 
 
 # =========================
-# Model definitions
-# =========================
-
-
-class TransformerFusionLiteModel(nn.Module):
-    """
-    Lightweight Transformer branch + stats.
-    Only 1 encoder layer because sequence length is short.
-    """
-    def __init__(self, input_dim, d_model=32, nhead=4, ff_dim=64, dropout=0.1, num_layers=1):
-        super().__init__()
-        self.input_proj = nn.Linear(input_dim, d_model)
-        encoder_layer = nn.TransformerEncoderLayer(
-            d_model=d_model,
-            nhead=nhead,
-            dim_feedforward=ff_dim,
-            dropout=dropout,
-            batch_first=True,
-            activation="gelu",
-        )
-        self.transformer = nn.TransformerEncoder(encoder_layer, num_layers=num_layers)
-        self.attn = nn.Linear(d_model, 1)
-
-        stat_dim = input_dim * 10
-        self.stat_proj = nn.Sequential(
-            nn.Linear(stat_dim, 32),
-            nn.ReLU(),
-            nn.Dropout(0.1),
-            nn.Linear(32, 16),
-            nn.ReLU(),
-        )
-
-        self.fc = nn.Sequential(
-            nn.Linear(d_model + 16, 64),
-            nn.ReLU(),
-            nn.Dropout(0.2),
-            nn.Linear(64, 32),
-            nn.ReLU(),
-            nn.Dropout(0.1),
-            nn.Linear(32, 1),
-        )
-
-    def extract_stat_features(self, x):
-        x_mean = x.mean(dim=1)
-        x_std = x.std(dim=1)
-        x_max = x.max(dim=1).values
-        x_min = x.min(dim=1).values
-        x_last = x[:, -1, :]
-        x_first = x[:, 0, :]
-        x_last_first = x_last - x_first
-        x_diff = x[:, 1:, :] - x[:, :-1, :]
-        x_diff_mean = x_diff.mean(dim=1)
-        x_diff_std = x_diff.std(dim=1)
-        x_absmax = x.abs().max(dim=1).values
-
-        return torch.cat(
-            [
-                x_mean,
-                x_std,
-                x_max,
-                x_min,
-                x_last,
-                x_first,
-                x_last_first,
-                x_diff_mean,
-                x_diff_std,
-                x_absmax,
-            ],
-            dim=1,
-        )
-
-    def forward(self, x):
-        x_deep = self.input_proj(x)
-        x_deep = self.transformer(x_deep)
-        weights = torch.softmax(self.attn(x_deep), dim=1)
-        x_deep = (x_deep * weights).sum(dim=1)
-
-        x_stat = self.extract_stat_features(x)
-        x_stat = self.stat_proj(x_stat)
-
-        feat = torch.cat([x_deep, x_stat], dim=1)
-        return self.fc(feat).squeeze()
-
-
-# =========================
 # Training / evaluation setup
 # =========================
+# Model class is imported from app/backend/app/inference/transformer_model.py
+# so saved .pt files unpickle cleanly inside the FastAPI worker.
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # Track the overall best model across all hyperparameter configurations.
@@ -259,6 +208,7 @@ for nhead in [4, 8]:
         )
 
 models = {}
+configs_by_name: dict[str, dict] = {}
 for cfg in transformer_experiments:
     model_name = (
         f"TransformerFusionLite_L{cfg['num_layers']}_D{cfg['d_model']}"
@@ -272,6 +222,7 @@ for cfg in transformer_experiments:
         dropout=cfg["dropout"],
         num_layers=cfg["num_layers"],
     )
+    configs_by_name[model_name] = cfg
 
 
 for model_name, model in models.items():
@@ -516,3 +467,43 @@ if global_best_test_state_dict is not None:
     print(f"Best threshold: {global_best_test_threshold}")
     print(f"Best test weighted-F1: {global_best_test_weighted_f1:.4f}")
     print(f"Saved to: {best_test_model_path}")
+
+    # =========================
+    # Inference-ready artifacts for the FastAPI worker
+    # =========================
+    # The web app loads `model_transformer.pt` as a full pickled module (not a
+    # bare state_dict), so reconstruct the best-by-test model from the cached
+    # config and save the whole object. Pickle records the class as
+    # `app.inference.transformer_model.TransformerFusionLiteModel` because that
+    # is where we imported the class from — matching what the worker resolves
+    # at load time.
+    best_cfg = configs_by_name[global_best_test_model_name]
+    best_model = TransformerFusionLiteModel(
+        X_train.shape[2],
+        d_model=best_cfg["d_model"],
+        nhead=best_cfg["nhead"],
+        ff_dim=best_cfg["ff_dim"],
+        dropout=best_cfg["dropout"],
+        num_layers=best_cfg["num_layers"],
+    )
+    best_model.load_state_dict(global_best_test_state_dict)
+    best_model.eval()
+
+    full_model_path = ARTIFACT_DIR / "model_transformer.pt"
+    torch.save(best_model, full_model_path)
+
+    threshold_path = ARTIFACT_DIR / "transformer_threshold.json"
+    with open(threshold_path, "w", encoding="utf-8") as f:
+        json.dump(
+            {
+                "threshold": float(global_best_test_threshold),
+                "source_model": global_best_test_model_name,
+            },
+            f,
+            indent=2,
+        )
+
+    print("\n========== Inference Artifacts ==========")
+    print(f"Full model:        {full_model_path}")
+    print(f"Per-feature scaler: {ARTIFACT_DIR / 'transformer_scaler.pkl'}")
+    print(f"Threshold JSON:    {threshold_path}")

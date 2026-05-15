@@ -1,9 +1,10 @@
-import os
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 
 # ============================================================
-# SKAB Dataset Builder for DL Pipeline (Strategy A) - By David
+# SKAB Dataset Builder for DL Pipeline (Strategy A)
 # ============================================================
 # Strategy A:
 #   Train = valve1/0.csv  ~ valve1/11.csv
@@ -23,8 +24,10 @@ import pandas as pd
 WINDOW_SIZE = 20
 HORIZON = 10
 
-DATA_DIR = "."  # Current SKAB directory
-SAVE_PATH = "../data/processed/dataset2/skab_strategyA_window20_horizon10.npz"
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+DATA_DIR = PROJECT_ROOT / "data" / "raw" / "skab"
+SAVE_PATH = PROJECT_ROOT / "data" / "processed" / "skab" / "skab_window20_horizon10.npz"
+SAVE_PATH.parent.mkdir(parents=True, exist_ok=True)
 
 # Strategy A split plan
 TRAIN_FILES = [("valve1", f"{i}.csv") for i in range(12)]
@@ -100,8 +103,14 @@ def process_split(split_name, file_list):
     print("=" * 60)
 
     for folder, file_name in file_list:
-        file_path = os.path.join(DATA_DIR, folder, file_name)
+        file_path = DATA_DIR / folder / file_name
         print(f"Processing: {file_path}")
+
+        if not file_path.is_file():
+            raise FileNotFoundError(
+                f"SKAB CSV not found at {file_path}. "
+                f"Download SKAB into {DATA_DIR} — see README.md (Workflow Step 1)."
+            )
 
         df = pd.read_csv(file_path, sep=';')
         X_file, y_file = build_samples_from_one_file(df, WINDOW_SIZE, HORIZON)
