@@ -1,6 +1,11 @@
-import pandas as pd
-from pathlib import Path
 from itertools import combinations
+from pathlib import Path
+
+import pandas as pd
+
+
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+DEFAULT_DATASET_ROOT = PROJECT_ROOT / "data" / "raw" / "skab"
 
 
 def load_csv_time_info(csv_file: Path) -> dict:
@@ -53,7 +58,7 @@ def compare_overlap(file_a: str, file_b: str, common_timestamps: set) -> dict:
     }
 
 
-def run_dataset_audit(dataset_root: str = '../../data/raw/dataset2', subset_filter=None):
+def run_dataset_audit(dataset_root=DEFAULT_DATASET_ROOT, subset_filter=None):
     root = Path(dataset_root)
     csv_files = sorted(root.rglob('*.csv'))
 
@@ -157,7 +162,7 @@ def run_dataset_audit(dataset_root: str = '../../data/raw/dataset2', subset_filt
     print('=' * 100)
 
 
-def audit_valve_only(dataset_root: str = '../../data/raw/dataset2'):
+def audit_valve_only(dataset_root=DEFAULT_DATASET_ROOT):
     print('Running audit on valve1 and valve2 subset...\n')
     run_dataset_audit(
         dataset_root=dataset_root,
@@ -165,7 +170,7 @@ def audit_valve_only(dataset_root: str = '../../data/raw/dataset2'):
     )
 
 
-def audit_other_only(dataset_root: str = '../../data/raw/dataset2'):
+def audit_other_only(dataset_root=DEFAULT_DATASET_ROOT):
     print('Running audit on other subset...\n')
     run_dataset_audit(
         dataset_root=dataset_root,
@@ -173,8 +178,8 @@ def audit_other_only(dataset_root: str = '../../data/raw/dataset2'):
     )
 
 
-def audit_all(dataset_root: str = '../../data/raw/dataset2'):
-    print('Running audit on full dataset2...\n')
+def audit_all(dataset_root=DEFAULT_DATASET_ROOT):
+    print('Running audit on full SKAB dataset...\n')
     run_dataset_audit(dataset_root=dataset_root)
 
 

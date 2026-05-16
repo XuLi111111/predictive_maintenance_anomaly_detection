@@ -37,39 +37,37 @@ incoming).
 The expected layout before running preprocessing:
 
 ```
-capstone/
-├── SKAB/                                          ← Raw data + scripts (this folder)
-│   ├── valve1/
-│   │   ├── 0.csv  ~ 15.csv                        ← 16 experiment runs, valve 1
-│   ├── valve2/
-│   │   ├── 0.csv  ~ 3.csv                         ← 4 experiment runs, valve 2
-│   ├── anomaly-free/
-│   │   └── anomaly-free.csv                       ← Normal operation baseline (not used in Strategy A)
-│   ├── other/
-│   │   └── 9.csv ~ 23.csv                         ← Other experiments (not used in Strategy A)
-│   ├── Build_Dataset_SKAB_DLpipeline_By_David.py  ← Preprocessing script (run this)
-│   └── SKAB_ClassicalML_Baseline_By_David.py      ← Classical ML baseline (optional reference)
+predictive_maintenance_anomaly_detection/
+├── data/
+│   ├── raw/
+│   │   └── skab/                                          ← Place the SKAB CSVs here
+│   │       ├── valve1/   0.csv ~ 15.csv                   ← 16 experiment runs, valve 1
+│   │       ├── valve2/   0.csv ~ 3.csv                    ← 4 experiment runs, valve 2 (test split)
+│   │       ├── anomaly-free/   anomaly-free.csv           ← Normal-only baseline (not used in Strategy A)
+│   │       └── other/    9.csv ~ 23.csv                   ← Other experiments (not used in Strategy A)
+│   └── processed/
+│       └── skab/
+│           └── skab_window20_horizon10.npz                ← OUTPUT: processed dataset
 │
-└── data/
-    ├── raw/
-    │   └── dataset2/
-    │       ├── valve1/   ← same CSVs mirrored here (optional backup)
-    │       └── valve2/
-    └── processed/
-        └── dataset2/
-            ├── skab_strategyA_window20_horizon10.npz   ← OUTPUT: processed dataset
-            └── skab_classical_models/                  ← OUTPUT: saved ML model weights
-                ├── scaler.pkl
-                ├── model_lr.pkl
-                ├── model_rf.pkl
-                ├── model_svm.pkl
-                ├── model_et.pkl
-                ├── model_gb.pkl
-                ├── model_knn.pkl
-                └── model_xgb.pkl
+├── src/
+│   ├── data_preprocessing/
+│   │   └── Build_Dataset_SKAB_DLpipeline_By_David.py      ← Preprocessing script (run this)
+│   └── classical_ml/
+│       └── SKAB_ClassicalML_Baseline_By_David.py          ← Classical ML baseline (optional reference)
+│
+└── app/backend/artifacts/                                 ← OUTPUT: trained model weights
+    ├── scaler.pkl
+    ├── model_lr.pkl
+    ├── model_rf.pkl
+    ├── model_svm.pkl
+    ├── model_et.pkl
+    ├── model_gb.pkl
+    ├── model_knn.pkl
+    └── model_xgb.pkl
 ```
 
-> **Note:** The script uses relative paths. It must be run from inside the `SKAB/` directory.
+> **Note:** The script resolves all paths relative to its own location, so
+> it can be invoked from any working directory.
 
 ---
 
@@ -188,7 +186,7 @@ downstream model pipelines.
 
 ## 6. Output Dataset Specification
 
-**File:** `data/processed/dataset2/skab_strategyA_window20_horizon10.npz`  
+**File:** `data/processed/skab/skab_window20_horizon10.npz`  
 **Size:** ~27 MB
 
 | Key | Shape | dtype | Value Range |
@@ -225,13 +223,10 @@ pip install numpy pandas
 
 ```bash
 # 1. Clone or download the raw SKAB data into the correct folder structure
-#    (see Section 2 above)
+#    (see Section 2 above). All CSVs go under data/raw/skab/.
 
-# 2. Navigate to the SKAB directory (IMPORTANT — script uses relative paths)
-cd path/to/capstone/SKAB
-
-# 3. Run the preprocessing script
-python Build_Dataset_SKAB_DLpipeline_By_David.py
+# 2. From the repository root, run the preprocessing script
+python src/data_preprocessing/Build_Dataset_SKAB_DLpipeline_By_David.py
 ```
 
 ### Expected output
@@ -240,7 +235,7 @@ python Build_Dataset_SKAB_DLpipeline_By_David.py
 ============================================================
 PROCESSING TRAIN SPLIT
 ============================================================
-Processing: .\valve1\0.csv
+Processing: .../data/raw/skab/valve1/0.csv
   -> Generated samples: 1119
   ...
 
@@ -254,7 +249,7 @@ Train positive ratio: 36.36%
 Val positive ratio:   36.76%
 Test positive ratio:  37.01%
 
-Saved Strategy A dataset to: ../data/processed/dataset2/skab_strategyA_window20_horizon10.npz
+Saved Strategy A dataset to: .../data/processed/skab/skab_window20_horizon10.npz
 ```
 
 ### Config parameters (top of script)
@@ -276,7 +271,7 @@ HORIZON     = 10   # number of future timesteps used to construct label
 ```python
 import numpy as np
 
-data = np.load("data/processed/dataset2/skab_strategyA_window20_horizon10.npz")
+data = np.load("data/processed/skab/skab_window20_horizon10.npz")
 
 X_train = data["X_train"]   # (13245, 20, 8)
 y_train = data["y_train"]   # (13245,)

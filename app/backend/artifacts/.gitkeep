@@ -1,0 +1,8 @@
+# Drop the trained model artifacts here:
+#   scaler.pkl
+#   model_lr.pkl  model_rf.pkl  model_svm.pkl  model_et.pkl
+#   model_gb.pkl  model_knn.pkl model_xgb.pkl
+#   model_transformer.pt   (PyTorch — pending teammate)
+#
+# Source location for the 7 sklearn artifacts:
+#   ../../data/processed/skab/skab_classical_models/

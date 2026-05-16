@@ -1,14 +1,13 @@
 """
-SKAB EDA By XuLi
+SKAB Exploratory Data Analysis
 
 This script performs basic exploratory data analysis (EDA) for the SKAB dataset.
 The goal is to understand data distribution, anomaly ratio, and basic time-series behaviour.
 
 Outputs will be saved under:
-results/dataset2/eda/
+docs/eda/
 """
 
-import os
 from pathlib import Path
 
 import pandas as pd
@@ -19,7 +18,7 @@ import matplotlib.pyplot as plt
 # Paths
 # ================================
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
-DATASET_ROOT = PROJECT_ROOT / "data" / "raw" / "dataset2"
+DATASET_ROOT = PROJECT_ROOT / "data" / "raw" / "skab"
 OUTPUT_DIR = PROJECT_ROOT / "docs" / "eda"
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
